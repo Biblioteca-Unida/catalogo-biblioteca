@@ -91,25 +91,25 @@
             <i class="fas fa-plug w-5 text-center"></i> Conectar Firebase
           </button>
           <hr class="border-slate-200 dark:border-slate-800 my-2">
-          <button onclick="navegarPestana('tab-metricas')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold transition text-[#1e3c6e] bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400">
+          <button onclick="navegarPestana('tab-metricas', this)" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold transition text-[#1e3c6e] bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400">
             <i class="fas fa-chart-pie w-5 text-center"></i> Métricas & KPIs
           </button>
-          <button onclick="navegarPestana('tab-libros')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-medium transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+          <button onclick="navegarPestana('tab-libros', this)" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-medium transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
             <i class="fas fa-book-medical w-5 text-center"></i> Gestión de Libros
           </button>
-          <button onclick="navegarPestana('tab-simuladores')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-medium transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+          <button onclick="navegarPestana('tab-simuladores', this)" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-medium transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
             <i class="fas fa-laptop-code w-5 text-center"></i> Simuladores 3D
           </button>
-          <button onclick="navegarPestana('tab-club')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-medium transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+          <button onclick="navegarPestana('tab-club', this)" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-medium transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
             <i class="fas fa-book-open-reader w-5 text-center"></i> Club de Lectura
           </button>
-          <button onclick="navegarPestana('tab-auditoria')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-medium transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+          <button onclick="navegarPestana('tab-auditoria', this)" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-medium transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
             <i class="fas fa-clipboard-check w-5 text-center"></i> Auditoría del Catálogo
           </button>
-          <button onclick="navegarPestana('tab-historial')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-medium transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+          <button onclick="navegarPestana('tab-historial', this)" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-medium transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
             <i class="fas fa-clock-rotate-left w-5 text-center"></i> Historial de Cambios
           </button>
-          <button onclick="navegarPestana('tab-database')" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-medium transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+          <button onclick="navegarPestana('tab-database', this)" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-medium transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
             <i class="fas fa-file-excel w-5 text-center"></i> Base de Datos & Excel
           </button>
         </nav>
@@ -870,13 +870,15 @@
 
     function bloquearPanel() { cerrarSesion(); }
 
-    function navegarPestana(id) {
+    function navegarPestana(id, boton = null) {
       document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
       document.querySelectorAll('.nav-btn').forEach(b => {
         b.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-medium transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800";
       });
       document.getElementById(id).classList.remove('hidden');
-      event.currentTarget.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold transition text-[#1e3c6e] bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400";
+      const activo = boton || [...document.querySelectorAll('.nav-btn')]
+        .find(b => (b.getAttribute('onclick') || '').includes(`'${id}'`));
+      if (activo) activo.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold transition text-[#1e3c6e] bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400";
     }
 
     function toggleDarkMode() {
@@ -974,10 +976,38 @@
     function procesarImagenLocal(event) {
       const file = event.target.files[0];
       if (!file) return;
+      if (!file.type.startsWith('image/')) {
+        event.target.value = '';
+        return alert('Seleccioná un archivo de imagen válido.');
+      }
+      if (file.size > 15 * 1024 * 1024) {
+        event.target.value = '';
+        return alert('La imagen original no puede superar 15 MB.');
+      }
       const reader = new FileReader();
       reader.onload = function(e) {
-        document.getElementById('inp-imagen').value = e.target.result;
-        actualizarPreview();
+        const img = new Image();
+        img.onload = function() {
+          // Recorte central 11:16 y compresión para evitar portadas Base64 gigantes.
+          const destinoW = 550, destinoH = 800, ratio = destinoW / destinoH;
+          let sx = 0, sy = 0, sw = img.width, sh = img.height;
+          if (img.width / img.height > ratio) {
+            sw = img.height * ratio;
+            sx = (img.width - sw) / 2;
+          } else {
+            sh = img.width / ratio;
+            sy = (img.height - sh) / 2;
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = destinoW; canvas.height = destinoH;
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, destinoW, destinoH);
+          ctx.drawImage(img, sx, sy, sw, sh, 0, 0, destinoW, destinoH);
+          document.getElementById('inp-imagen').value = canvas.toDataURL('image/jpeg', 0.78);
+          actualizarPreview();
+        };
+        img.onerror = () => alert('No se pudo procesar esta imagen.');
+        img.src = e.target.result;
       };
       reader.readAsDataURL(file);
     }
@@ -985,7 +1015,9 @@
     // --- VACIAR BASE DE DATOS EN LA NUBE ---
     async function vaciarBaseDeDatosNube() {
       if (!db) return alert("Conecta Firebase primero.");
-      if (!confirm("⚠️ ¿Estás SEGURO de que deseas eliminar TODOS los libros de la nube? Esta acción borrará todo el inventario.")) return;
+      if (!confirm("⚠️ Esta acción eliminará TODOS los libros de la nube. El backup no se restaura automáticamente. ¿Deseás continuar?")) return;
+      const confirmacion = prompt('Para confirmar, escribí exactamente: VACIAR');
+      if (confirmacion !== 'VACIAR') return alert('Operación cancelada. No se eliminó ningún libro.');
 
       const spinner = document.getElementById('sync-spinner');
       spinner.classList.remove('hidden');
@@ -997,6 +1029,7 @@
           batch.delete(doc.ref);
         });
         await batch.commit();
+        await registrarAuditoria('eliminar','base_completa','',`Vaciado total: ${snapshot.size} libros`,{cantidad:snapshot.size});
         alert("¡Base de datos en la nube vaciada con éxito!");
       } catch (err) {
         alert("Error al vaciar la base de datos: " + err.message);
@@ -1011,7 +1044,9 @@
       
       const librosRespaldo = (typeof semillalibrosKuri !== 'undefined' && semillalibrosKuri.length > 0) ? semillalibrosKuri : [];
 
-      if (!confirm(`¿Deseas inyectar la semilla limpia (${librosRespaldo.length} libros únicos) a Firestore?`)) return;
+      if (!confirm(`Se compararán e incorporarán hasta ${librosRespaldo.length} libros de la semilla. ¿Deseás continuar?`)) return;
+      const confirmacion = prompt('Para confirmar, escribí exactamente: SEMILLA');
+      if (confirmacion !== 'SEMILLA') return alert('Operación cancelada. No se cargó la semilla.');
 
       const spinner = document.getElementById('sync-spinner');
       spinner.classList.remove('hidden');
@@ -1039,6 +1074,7 @@
 
         if (agregados > 0) {
           await batch.commit();
+          await registrarAuditoria('crear','semilla','',`Carga de semilla: ${agregados} libros`,{cantidad:agregados});
           alert(`¡Se agregaron ${agregados} libros únicos a la nube con éxito!`);
         } else {
           alert("Todos los libros de la semilla ya existían en la base de datos.");
@@ -1513,15 +1549,29 @@
         return true;
       });
 
-      const librosLimpios = librosUnicos.map(({ _id, ...resto }) => resto);
+      let portadasBase64Omitidas = 0;
+      const fallbackPortada = "https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=300&q=80";
+      const librosLimpios = librosUnicos.map(({ _id, ...resto }) => {
+        const limpio = { ...resto };
+        if (String(limpio.imagen || '').startsWith('data:image/')) {
+          portadasBase64Omitidas++;
+          limpio.imagen = PORTADAS_PRESET[limpio.carrera] || fallbackPortada;
+        }
+        return limpio;
+      });
       const simsLimpios = simuladores.map(({ _id, ...resto }) => resto);
-      const dataStr = "data:text/javascript;charset=utf-8," + encodeURIComponent(`const catalogoLibros = ${JSON.stringify(librosLimpios, null, 4)};\n\nconst simuladoresGlobales = ${JSON.stringify(simsLimpios, null, 4)};\n`);
+      const contenido = `const catalogoLibros = ${JSON.stringify(librosLimpios, null, 4)};\n\nconst simuladoresGlobales = ${JSON.stringify(simsLimpios, null, 4)};\n`;
+      const blob = new Blob([contenido], { type: 'text/javascript;charset=utf-8' });
       const a = document.createElement('a');
-      a.href = dataStr;
+      a.href = URL.createObjectURL(blob);
       a.download = "catalogo.js";
       document.body.appendChild(a);
       a.click();
       a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      if (portadasBase64Omitidas) {
+        alert(`Catálogo liviano generado. Se sustituyeron ${portadasBase64Omitidas} portadas Base64 por portadas temáticas únicamente en el respaldo. Las portadas reales permanecen en Firebase.`);
+      }
     }
 
     function actualizarTodoUI() {
