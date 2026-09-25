@@ -51,6 +51,39 @@
         .facultad-card:hover img { transform: scale(1.1); }
         .facultad-card:hover .overlay { background: rgba(41, 128, 185, 0.9); }
         .facultad-card:hover .carreras-list, .facultad-card:hover .btn-simulador { opacity: 1; transform: translateY(0); }
+
+        /* FEADYS: lista extensa, distribuida sin desbordar la tarjeta */
+        .facultad-card-feadys .overlay { padding: 18px 20px; }
+        .facultad-card-feadys h2 { margin-bottom: 4px; }
+        .carreras-list-feadys {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            column-gap: 16px;
+            row-gap: 0;
+            width: 100%;
+            margin-top: 8px;
+            font-size: 0.64rem !important;
+            line-height: 1.25;
+        }
+        .carreras-list-feadys li {
+            margin-bottom: 0;
+            padding: 5px 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 28px;
+        }
+        .facultad-card-feadys .btn-simulador { margin-top: 10px; }
+
+        @media (max-width: 768px) {
+            .facultad-card-feadys { height: 650px; }
+            .carreras-list-feadys {
+                grid-template-columns: 1fr;
+                font-size: 0.75rem !important;
+                margin-top: 10px;
+            }
+            .carreras-list-feadys li { min-height: 24px; padding: 4px 3px; }
+        }
         .catalogo-header { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); margin-bottom: 25px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 15px; }
         .catalogo-titulo-contenedor { display: flex; align-items: center; gap: 15px; flex-grow: 1; }
         .catalogo-header h2 { font-family: "Cooper Black", serif; color: #1e3c6e; font-size: 2rem; margin: 0; text-transform: uppercase; }
@@ -233,11 +266,11 @@
         </div>
 
         <!-- 5. Facultad de Gestión (Ahora con las carreras que antes eran de FEADYS) -->
-        <div class="facultad-card">
+        <div class="facultad-card facultad-card-feadys">
             <img src="https://www.unida.edu.py/v4/wp-content/uploads/elementor/thumbs/st_403991497-qfymca815zkjkmjzj5zfgkhhp3a2fdpawj6koah7m8.png" alt="Facultad de Gestión">
             <div class="overlay">
                 <h2>FEADYS</h2>
-                <ul class="carreras-list" style="font-size: 0.70rem;">
+                <ul class="carreras-list carreras-list-feadys">
                     <li onclick="abrirCatalogo('Adm. de Empresas/Pública')">Adm. de Empresas/Pública</li>
                     <li onclick="abrirCatalogo('Adm. Gestión Emprendedora')">Adm. Gestión Emprendedora</li>
                     <li onclick="abrirCatalogo('Gestión de Talento Humano')">Gestión de Talento Humano</li>
