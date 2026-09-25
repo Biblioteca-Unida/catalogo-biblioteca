@@ -85,6 +85,41 @@
         .btn-pag:disabled { opacity: 0.5; cursor: not-allowed; }
         .pag-info { font-family: 'Poppins', sans-serif; font-weight: 600; color: #555; }
         
+
+
+        /* Modal de identificación previo a la descarga */
+        .modal-descarga-overlay { position: fixed; inset: 0; z-index: 5000; background: rgba(15, 23, 42, 0.78); display: none; align-items: center; justify-content: center; padding: 20px; overflow-y: auto; }
+        .modal-descarga-overlay.activo { display: flex; }
+        .modal-descarga { width: 100%; max-width: 620px; background: #fff; border-radius: 18px; box-shadow: 0 24px 70px rgba(0,0,0,.32); overflow: hidden; animation: modalEntrada .2s ease; }
+        .modal-descarga-header { padding: 22px 26px 16px; border-bottom: 1px solid #e5e7eb; display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+        .modal-descarga-header h2 { margin: 0; color: #1e3c6e; font-size: 1.45rem; }
+        .modal-descarga-header p { margin: 6px 0 0; color: #64748b; font-size: .83rem; line-height: 1.45; }
+        .modal-descarga-cerrar { background: transparent; border: none; color: #64748b; font-size: 1.35rem; cursor: pointer; padding: 3px 7px; border-radius: 8px; }
+        .modal-descarga-cerrar:hover { background: #f1f5f9; color: #1e3c6e; }
+        .modal-descarga-body { padding: 22px 26px 26px; }
+        .descarga-libro-resumen { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 12px 14px; margin-bottom: 18px; }
+        .descarga-libro-resumen strong { display: block; color: #1e3c6e; font-size: .83rem; }
+        .descarga-libro-resumen span { display: block; color: #475569; font-size: .78rem; margin-top: 3px; }
+        .form-grid-descarga { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .campo-descarga { display: flex; flex-direction: column; gap: 6px; }
+        .campo-descarga.full { grid-column: 1 / -1; }
+        .campo-descarga label { font-size: .78rem; font-weight: 600; color: #334155; }
+        .campo-descarga input, .campo-descarga select { width: 100%; box-sizing: border-box; border: 1px solid #cbd5e1; border-radius: 10px; padding: 11px 12px; font-family: 'Poppins', sans-serif; font-size: .84rem; outline: none; background: #fff; color: #0f172a; }
+        .campo-descarga input:focus, .campo-descarga select:focus { border-color: #2980b9; box-shadow: 0 0 0 3px rgba(41,128,185,.12); }
+        .campo-ayuda { font-size: .68rem; color: #64748b; margin-top: -2px; }
+        .campo-error { color: #dc2626; font-size: .72rem; font-weight: 600; display: none; }
+        .privacidad-descarga { margin-top: 16px; padding: 12px 14px; background: #f8fafc; border-radius: 10px; color: #64748b; font-size: .7rem; line-height: 1.5; }
+        .recordar-descarga { display: flex; gap: 9px; align-items: flex-start; margin-top: 13px; color: #475569; font-size: .72rem; }
+        .recordar-descarga input { margin-top: 2px; }
+        .acciones-descarga { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+        .btn-cancelar-descarga, .btn-confirmar-descarga { border: none; border-radius: 10px; padding: 11px 18px; font-family: 'Poppins', sans-serif; font-weight: 600; cursor: pointer; }
+        .btn-cancelar-descarga { background: #e2e8f0; color: #475569; }
+        .btn-confirmar-descarga { background: #1e3c6e; color: white; min-width: 180px; }
+        .btn-confirmar-descarga:hover { background: #2980b9; }
+        .btn-confirmar-descarga:disabled { opacity: .65; cursor: wait; }
+        @keyframes modalEntrada { from { opacity: 0; transform: translateY(8px) scale(.985); } to { opacity: 1; transform: none; } }
+        @media (max-width: 640px) { .form-grid-descarga { grid-template-columns: 1fr; } .campo-descarga.full { grid-column: auto; } .modal-descarga-body, .modal-descarga-header { padding-left: 18px; padding-right: 18px; } .acciones-descarga { flex-direction: column-reverse; } .btn-cancelar-descarga, .btn-confirmar-descarga { width: 100%; } }
+
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
@@ -355,6 +390,108 @@
     </div>
 </footer>
 
+
+<!-- MODAL: IDENTIFICACIÓN PARA DESCARGA -->
+<div id="modal-descarga" class="modal-descarga-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-descarga-titulo">
+    <div class="modal-descarga">
+        <div class="modal-descarga-header">
+            <div>
+                <h2 id="modal-descarga-titulo">Complete sus datos para descargar</h2>
+                <p>Esta información permite a la Biblioteca Central generar estadísticas de uso de los recursos bibliográficos.</p>
+            </div>
+            <button type="button" class="modal-descarga-cerrar" onclick="cerrarModalDescarga()" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-descarga-body">
+            <div class="descarga-libro-resumen">
+                <strong id="descarga-libro-titulo">Libro seleccionado</strong>
+                <span id="descarga-libro-autor"></span>
+            </div>
+
+            <form id="form-descarga" novalidate>
+                <div class="form-grid-descarga">
+                    <div class="campo-descarga">
+                        <label for="desc-nombres">Nombre(s) *</label>
+                        <input id="desc-nombres" type="text" maxlength="100" autocomplete="given-name" placeholder="Ej: Juan Carlos" required>
+                    </div>
+                    <div class="campo-descarga">
+                        <label for="desc-apellidos">Apellidos *</label>
+                        <input id="desc-apellidos" type="text" maxlength="120" autocomplete="family-name" placeholder="Ej: González Benítez" required>
+                        <span class="campo-ayuda">Ingrese sus dos apellidos.</span>
+                        <span id="error-apellidos" class="campo-error">Debe ingresar sus dos apellidos.</span>
+                    </div>
+                    <div class="campo-descarga">
+                        <label for="desc-correo">Correo electrónico *</label>
+                        <input id="desc-correo" type="email" maxlength="160" autocomplete="email" placeholder="correo@ejemplo.com" required>
+                    </div>
+                    <div class="campo-descarga">
+                        <label for="desc-ocupacion">Ocupación *</label>
+                        <select id="desc-ocupacion" required onchange="actualizarCamposDescarga()">
+                            <option value="">Seleccione una opción</option>
+                            <option value="Estudiante UNIDA">Estudiante UNIDA</option>
+                            <option value="Docente UNIDA">Docente UNIDA</option>
+                            <option value="Externo">Externo</option>
+                        </select>
+                    </div>
+                    <div id="grupo-matricula" class="campo-descarga" style="display:none;">
+                        <label for="desc-matricula">Matrícula *</label>
+                        <input id="desc-matricula" type="text" maxlength="40" autocomplete="off" placeholder="Ingrese su matrícula">
+                    </div>
+                    <div id="grupo-carrera" class="campo-descarga">
+                        <label for="desc-carrera">Carrera / Área *</label>
+                        <select id="desc-carrera" required>
+                            <option value="">Seleccione una opción</option>
+                            <option>Administración de Empresas</option>
+                            <option>Adm. de Empresas/Pública</option>
+                            <option>Adm. Gestión Emprendedora</option>
+                            <option>Banca y Finanzas</option>
+                            <option>Ciencias Políticas</option>
+                            <option>Comercio Internacional</option>
+                            <option>Contaduría Pública</option>
+                            <option>Derecho</option>
+                            <option>Educación</option>
+                            <option>Enfermería</option>
+                            <option>Ingeniería Comercial</option>
+                            <option>Ingeniería Electrónica</option>
+                            <option>Ingeniería en Informática</option>
+                            <option>Ingeniería en Sistemas</option>
+                            <option>Ingeniería Industrial</option>
+                            <option>Kinesiología y Fisioterapia</option>
+                            <option>Marketing y Gestión Comercial</option>
+                            <option>Marketing Digital</option>
+                            <option>Medicina</option>
+                            <option>Nutrición</option>
+                            <option>Psicología Organizacional</option>
+                            <option>Relaciones Internacionales</option>
+                            <option>Sistemas</option>
+                            <option>Talento Humano</option>
+                            <option value="No aplica / Externo">No aplica / Externo</option>
+                        </select>
+                    </div>
+                    <div id="grupo-institucion" class="campo-descarga full" style="display:none;">
+                        <label for="desc-institucion">Institución / Organización</label>
+                        <input id="desc-institucion" type="text" maxlength="140" placeholder="Opcional">
+                    </div>
+                </div>
+
+                <label class="recordar-descarga">
+                    <input id="desc-recordar" type="checkbox">
+                    <span>Recordar mis datos en este dispositivo para completar más rápido futuras descargas. No active esta opción en una computadora compartida.</span>
+                </label>
+
+                <div class="privacidad-descarga">
+                    Los datos serán utilizados exclusivamente para estadísticas de uso y gestión de los recursos bibliográficos de la Biblioteca Central UNIDA.
+                </div>
+
+                <div class="acciones-descarga">
+                    <button type="button" class="btn-cancelar-descarga" onclick="cerrarModalDescarga()">Cancelar</button>
+                    <button id="btn-confirmar-descarga" type="submit" class="btn-confirmar-descarga"><i class="fas fa-download"></i> Registrar y descargar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
 <!-- LECTURA DEL CATÁLOGO EXTERNO Y CONEXIÓN FIREBASE -->
 <script src="catalogo.js"></script>
 
@@ -377,6 +514,8 @@
     let paginaActual = 1;
     let librosFiltradosGlobal = [];
     let timeoutBusqueda;
+    let libroPendienteDescarga = null;
+    const DESCARGA_STORAGE_KEY = 'unida_datos_descarga_v1';
 
     async function inicializarDatosCloud() {
         try {
@@ -386,7 +525,7 @@
             // Sincronización en tiempo real de libros desde Firebase
             db.collection("libros").onSnapshot(snapshot => {
                 window.catalogoLibros = [];
-                snapshot.forEach(doc => window.catalogoLibros.push(doc.data()));
+                snapshot.forEach(doc => window.catalogoLibros.push({ _id: doc.id, ...doc.data() }));
                 if (window.catalogoLibros.length === 0 && typeof catalogoLibros !== 'undefined') {
                     window.catalogoLibros = [...catalogoLibros];
                 }
@@ -519,16 +658,181 @@
                     <p class="libro-author">${libro.autor}</p>
                 </div>
                 <div class="libro-action">
-                    <a href="${libro.link}" target="_blank" class="btn-drive-download">
+                    <button type="button" class="btn-drive-download btn-registro-descarga">
                         <i class="fab fa-google-drive"></i> Descargar
-                    </a>
+                    </button>
                 </div>
             `;
+            const btnDescarga = card.querySelector('.btn-registro-descarga');
+            if (btnDescarga) btnDescarga.addEventListener('click', () => abrirModalDescarga(libro));
             contenedor.appendChild(card);
         });
         
         actualizarBotonesPaginacion();
     }
+
+
+    // --- REGISTRO DE DESCARGAS ---
+    function abrirModalDescarga(libro) {
+        libroPendienteDescarga = libro;
+        document.getElementById('descarga-libro-titulo').textContent = libro.titulo || 'Libro seleccionado';
+        document.getElementById('descarga-libro-autor').textContent = libro.autor ? `Autor: ${libro.autor}` : '';
+        cargarDatosDescargaGuardados();
+        actualizarCamposDescarga();
+        document.getElementById('modal-descarga').classList.add('activo');
+        document.body.style.overflow = 'hidden';
+        setTimeout(() => document.getElementById('desc-nombres').focus(), 50);
+    }
+
+    function cerrarModalDescarga() {
+        document.getElementById('modal-descarga').classList.remove('activo');
+        document.body.style.overflow = '';
+        libroPendienteDescarga = null;
+        const errApellidos = document.getElementById('error-apellidos');
+        if (errApellidos) errApellidos.style.display = 'none';
+    }
+
+    function actualizarCamposDescarga() {
+        const ocupacion = document.getElementById('desc-ocupacion').value;
+        const grupoMatricula = document.getElementById('grupo-matricula');
+        const matricula = document.getElementById('desc-matricula');
+        const grupoInstitucion = document.getElementById('grupo-institucion');
+        const carrera = document.getElementById('desc-carrera');
+
+        const esEstudiante = ocupacion === 'Estudiante UNIDA';
+        const esExterno = ocupacion === 'Externo';
+        grupoMatricula.style.display = esEstudiante ? 'flex' : 'none';
+        matricula.required = esEstudiante;
+        if (!esEstudiante) matricula.value = '';
+        grupoInstitucion.style.display = esExterno ? 'flex' : 'none';
+        if (esExterno && !carrera.value) carrera.value = 'No aplica / Externo';
+        if (!esExterno && carrera.value === 'No aplica / Externo') carrera.value = '';
+    }
+
+    function cargarDatosDescargaGuardados() {
+        const raw = localStorage.getItem(DESCARGA_STORAGE_KEY);
+        if (!raw) {
+            document.getElementById('form-descarga').reset();
+            return;
+        }
+        try {
+            const d = JSON.parse(raw);
+            document.getElementById('desc-nombres').value = d.nombres || '';
+            document.getElementById('desc-apellidos').value = d.apellidos || '';
+            document.getElementById('desc-correo').value = d.correo || '';
+            document.getElementById('desc-ocupacion').value = d.ocupacion || '';
+            document.getElementById('desc-matricula').value = d.matricula || '';
+            document.getElementById('desc-carrera').value = d.carrera || '';
+            document.getElementById('desc-institucion').value = d.institucion || '';
+            document.getElementById('desc-recordar').checked = true;
+        } catch (_) {
+            localStorage.removeItem(DESCARGA_STORAGE_KEY);
+            document.getElementById('form-descarga').reset();
+        }
+    }
+
+    function normalizarEspacios(valor) {
+        return (valor || '').trim().replace(/\s+/g, ' ');
+    }
+
+    function tieneDosApellidos(valor) {
+        return normalizarEspacios(valor).split(' ').filter(Boolean).length >= 2;
+    }
+
+    async function registrarYDescargar(event) {
+        event.preventDefault();
+        if (!libroPendienteDescarga) return;
+
+        const form = document.getElementById('form-descarga');
+        const apellidosInput = document.getElementById('desc-apellidos');
+        const errorApellidos = document.getElementById('error-apellidos');
+        const ocupacion = document.getElementById('desc-ocupacion').value;
+        const matricula = normalizarEspacios(document.getElementById('desc-matricula').value);
+
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+        if (!tieneDosApellidos(apellidosInput.value)) {
+            errorApellidos.style.display = 'block';
+            apellidosInput.focus();
+            return;
+        }
+        errorApellidos.style.display = 'none';
+        if (ocupacion === 'Estudiante UNIDA' && !matricula) {
+            document.getElementById('desc-matricula').focus();
+            return;
+        }
+
+        const datosPersona = {
+            nombres: normalizarEspacios(document.getElementById('desc-nombres').value),
+            apellidos: normalizarEspacios(apellidosInput.value),
+            correo: normalizarEspacios(document.getElementById('desc-correo').value).toLowerCase(),
+            ocupacion,
+            matricula: ocupacion === 'Estudiante UNIDA' ? matricula : '',
+            carrera: document.getElementById('desc-carrera').value,
+            institucion: ocupacion === 'Externo' ? normalizarEspacios(document.getElementById('desc-institucion').value) : ''
+        };
+
+        if (document.getElementById('desc-recordar').checked) {
+            localStorage.setItem(DESCARGA_STORAGE_KEY, JSON.stringify(datosPersona));
+        } else {
+            localStorage.removeItem(DESCARGA_STORAGE_KEY);
+        }
+
+        const libro = libroPendienteDescarga;
+        const btn = document.getElementById('btn-confirmar-descarga');
+        const textoOriginal = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Registrando...';
+
+        // Abrimos una pestaña durante el gesto del usuario para evitar el bloqueo de pop-ups.
+        const pestaña = window.open('about:blank', '_blank');
+        if (pestaña) {
+            try { pestaña.document.title = 'Preparando descarga...'; } catch (_) {}
+        }
+
+        try {
+            if (!db) {
+                if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+                db = firebase.firestore();
+            }
+
+            const eventoDescarga = {
+                ...datosPersona,
+                libroId: libro._id || null,
+                tituloLibro: libro.titulo || '',
+                autorLibro: libro.autor || '',
+                carreraLibro: libro.carrera || '',
+                enlaceLibro: libro.link || '',
+                tipoRecurso: 'Libro digital',
+                origen: 'catalogo-web',
+                fecha: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            await db.collection('descargas').add(eventoDescarga);
+
+            const destino = libro.link;
+            cerrarModalDescarga();
+            if (pestaña) pestaña.location.href = destino;
+            else window.open(destino, '_blank', 'noopener');
+        } catch (error) {
+            console.error('[UNIDA] No se pudo registrar la descarga:', error);
+            if (pestaña) pestaña.close();
+            alert('No se pudo registrar la descarga. Verificá tu conexión e intentá nuevamente.');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = textoOriginal;
+        }
+    }
+
+    document.getElementById('form-descarga').addEventListener('submit', registrarYDescargar);
+    document.getElementById('modal-descarga').addEventListener('click', (event) => {
+        if (event.target.id === 'modal-descarga') cerrarModalDescarga();
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && document.getElementById('modal-descarga').classList.contains('activo')) cerrarModalDescarga();
+    });
 
     function cambiarPagina(delta) {
         const totalPaginas = Math.ceil(librosFiltradosGlobal.length / LIBROS_POR_PAGINA);
