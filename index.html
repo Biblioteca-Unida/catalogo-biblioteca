@@ -516,22 +516,75 @@
     let timeoutBusqueda;
     let libroPendienteDescarga = null;
     const DESCARGA_STORAGE_KEY = 'unida_datos_descarga_v1';
+    const CATALOGO_CACHE_KEY = 'unida_catalogo_global';
+    const SIMULADORES_CACHE_KEY = 'unida_simuladores_global';
+
+    // --- CARGA INMEDIATA: CACHE/ARCHIVO ESTÁTICO PRIMERO, FIREBASE DESPUÉS ---
+    function cargarDatosInmediatos() {
+        let origenCatalogo = 'vacío';
+
+        try {
+            const cache = localStorage.getItem(CATALOGO_CACHE_KEY);
+            if (cache) {
+                const datos = JSON.parse(cache);
+                if (Array.isArray(datos) && datos.length) {
+                    window.catalogoLibros = datos;
+                    origenCatalogo = 'cache local';
+                }
+            }
+        } catch (error) {
+            console.warn('[UNIDA] Cache local del catálogo inválida:', error);
+            try { localStorage.removeItem(CATALOGO_CACHE_KEY); } catch (_) {}
+        }
+
+        if (!window.catalogoLibros.length && typeof catalogoLibros !== 'undefined' && Array.isArray(catalogoLibros)) {
+            window.catalogoLibros = [...catalogoLibros];
+            origenCatalogo = 'catalogo.js';
+        }
+
+        try {
+            const cacheSims = localStorage.getItem(SIMULADORES_CACHE_KEY);
+            if (cacheSims) {
+                const datosSims = JSON.parse(cacheSims);
+                if (Array.isArray(datosSims)) window.simuladoresGlobales = datosSims;
+            }
+        } catch (_) {
+            try { localStorage.removeItem(SIMULADORES_CACHE_KEY); } catch (_) {}
+        }
+
+        console.info(`[UNIDA] Catálogo inmediato: ${window.catalogoLibros.length} libros desde ${origenCatalogo}.`);
+    }
+
+    function guardarCacheSeguro(clave, datos) {
+        try {
+            localStorage.setItem(clave, JSON.stringify(datos));
+        } catch (error) {
+            console.warn(`[UNIDA] No se pudo actualizar ${clave} en localStorage:`, error);
+        }
+    }
 
     async function inicializarDatosCloud() {
+        const inicioFirebase = performance.now();
+
         try {
             if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
             db = firebase.firestore();
 
-            // Sincronización en tiempo real de libros desde Firebase
+            // Firestore sincroniza en segundo plano: el catálogo ya está utilizable.
             db.collection("libros").onSnapshot(snapshot => {
-                window.catalogoLibros = [];
-                snapshot.forEach(doc => window.catalogoLibros.push({ _id: doc.id, ...doc.data() }));
-                if (window.catalogoLibros.length === 0 && typeof catalogoLibros !== 'undefined') {
+                const librosCloud = [];
+                snapshot.forEach(doc => librosCloud.push({ _id: doc.id, ...doc.data() }));
+
+                if (librosCloud.length > 0) {
+                    window.catalogoLibros = librosCloud;
+                    guardarCacheSeguro(CATALOGO_CACHE_KEY, librosCloud);
+                } else if (!window.catalogoLibros.length && typeof catalogoLibros !== 'undefined' && Array.isArray(catalogoLibros)) {
                     window.catalogoLibros = [...catalogoLibros];
                 }
-                
-                // Si el usuario está viendo el catálogo, actualizarlo en vivo sin romper la página
-                if(document.getElementById('catalogo-section').style.display === 'block'){
+
+                console.info(`[UNIDA] Firebase sincronizó ${librosCloud.length} libros en ${Math.round(performance.now() - inicioFirebase)} ms.`);
+
+                if (document.getElementById('catalogo-section').style.display === 'block') {
                     const tituloActual = document.getElementById('catalogo-titulo').textContent;
                     const carreraActual = tituloActual.replace('Catálogo - ', '');
                     const texto = document.getElementById('buscador-libros').value;
@@ -539,39 +592,49 @@
                     mostrarLibros(tituloActual === 'Catálogo' ? null : carreraActual, texto, filtro, false);
                 }
             }, error => {
+                console.warn('[UNIDA] Firestore libros no disponible; se mantiene el catálogo inmediato.', error);
                 usarRespaldoLocal();
             });
 
-            // Sincronización en tiempo real de simuladores desde Firebase
             db.collection("simuladores").onSnapshot(snapshot => {
-                window.simuladoresGlobales = [];
-                snapshot.forEach(doc => window.simuladoresGlobales.push(doc.data()));
-                if (window.simuladoresGlobales.length === 0 && typeof simuladoresGlobales !== 'undefined') {
-                    window.simuladoresGlobales = [...simuladoresGlobales];
+                const simsCloud = [];
+                snapshot.forEach(doc => simsCloud.push(doc.data()));
+
+                if (simsCloud.length > 0) {
+                    window.simuladoresGlobales = simsCloud;
+                    guardarCacheSeguro(SIMULADORES_CACHE_KEY, simsCloud);
                 }
             }, error => {
-                usarRespaldoLocal();
+                console.warn('[UNIDA] Firestore simuladores no disponible; se mantiene el respaldo.', error);
             });
 
         } catch (e) {
+            console.warn('[UNIDA] No se pudo iniciar Firebase; se mantiene el catálogo inmediato.', e);
             usarRespaldoLocal();
         }
     }
 
     function usarRespaldoLocal() {
-        const localData = localStorage.getItem('unida_catalogo_global');
-        if (localData) {
-            window.catalogoLibros = JSON.parse(localData);
-        } else if (typeof catalogoLibros !== 'undefined') {
-            window.catalogoLibros = [...catalogoLibros];
-        } else {
-            window.catalogoLibros = [];
+        if (!window.catalogoLibros.length) {
+            try {
+                const localData = localStorage.getItem(CATALOGO_CACHE_KEY);
+                if (localData) window.catalogoLibros = JSON.parse(localData);
+            } catch (_) {}
+
+            if (!window.catalogoLibros.length && typeof catalogoLibros !== 'undefined' && Array.isArray(catalogoLibros)) {
+                window.catalogoLibros = [...catalogoLibros];
+            }
         }
 
-        if (typeof simuladoresGlobales !== 'undefined') {
-            window.simuladoresGlobales = [...simuladoresGlobales];
-        } else {
-            window.simuladoresGlobales = [];
+        if (!window.simuladoresGlobales.length) {
+            try {
+                const localSims = localStorage.getItem(SIMULADORES_CACHE_KEY);
+                if (localSims) window.simuladoresGlobales = JSON.parse(localSims);
+            } catch (_) {}
+
+            if (!window.simuladoresGlobales.length && typeof simuladoresGlobales !== 'undefined' && Array.isArray(simuladoresGlobales)) {
+                window.simuladoresGlobales = [...simuladoresGlobales];
+            }
         }
     }
 
@@ -651,7 +714,7 @@
             // LAZY LOADING activado en el <img>
             card.innerHTML = `
                 <div class="libro-cover">
-                    <img src="${libro.imagen || 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=300&q=80'}" alt="Portada" loading="lazy" style="width:100%; height:100%; object-fit:cover;">
+                    <img src="${libro.imagen || 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=300&q=80'}" alt="Portada" loading="lazy" decoding="async" fetchpriority="low" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=300&q=60';" style="width:100%; height:100%; object-fit:cover;">
                 </div>
                 <div class="libro-info">
                     <h3 class="libro-title">${libro.titulo}</h3>
@@ -900,9 +963,11 @@
         showSection('simuladores');
     }
 
-    inicializarDatosCloud().then(() => {
-        showSection('dashboard');
-    });
+    // La interfaz se muestra ya con cache/catalogo.js.
+    // Firebase actualiza silenciosamente en segundo plano.
+    cargarDatosInmediatos();
+    showSection('dashboard');
+    inicializarDatosCloud();
 </script>
 </body>
 </html>
