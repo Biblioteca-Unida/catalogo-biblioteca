@@ -237,12 +237,18 @@
             <img src="https://www.unida.edu.py/v4/wp-content/uploads/elementor/thumbs/st_403991497-qfymca815zkjkmjzj5zfgkhhp3a2fdpawj6koah7m8.png" alt="Facultad de Gestión">
             <div class="overlay">
                 <h2>FEADYS</h2>
-                <ul class="carreras-list" style="font-size: 0.75rem;">
+                <ul class="carreras-list" style="font-size: 0.70rem;">
                     <li onclick="abrirCatalogo('Adm. de Empresas/Pública')">Adm. de Empresas/Pública</li>
                     <li onclick="abrirCatalogo('Adm. Gestión Emprendedora')">Adm. Gestión Emprendedora</li>
-                    <li onclick="abrirCatalogo('Talento Humano')">Talento Humano</li>
+                    <li onclick="abrirCatalogo('Gestión de Talento Humano')">Gestión de Talento Humano</li>
                     <li onclick="abrirCatalogo('Banca y Finanzas')">Banca y Finanzas</li>
-                    <li onclick="abrirCatalogo('Educación')">Educación</li>
+                    <li onclick="abrirCatalogo('Ciencias de la Educación')">Ciencias de la Educación</li>
+                    <li onclick="abrirCatalogo('Comunicación y Publicidad')">Comunicación y Publicidad</li>
+                    <li onclick="abrirCatalogo('Economía')">Economía</li>
+                    <li onclick="abrirCatalogo('Economía y Finanzas')">Economía y Finanzas</li>
+                    <li onclick="abrirCatalogo('Economía y Negocios Internacionales')">Economía y Negocios Internacionales</li>
+                    <li onclick="abrirCatalogo('Ingeniería en Logística Global')">Ingeniería en Logística Global</li>
+                    <li onclick="abrirCatalogo('Inteligencia Artificial y Robótica')">Inteligencia Artificial y Robótica</li>
                     <li onclick="abrirCatalogo('Marketing Digital')">Marketing Digital</li>
                     <li onclick="abrirCatalogo('Sistemas')">Sistemas</li>
                     <li onclick="abrirCatalogo('Relaciones Internacionales')">Relaciones Internacionales</li>
@@ -448,7 +454,11 @@
                             <option>Comercio Internacional</option>
                             <option>Contaduría Pública</option>
                             <option>Derecho</option>
-                            <option>Educación</option>
+                            <option>Ciencias de la Educación</option>
+                            <option>Comunicación y Publicidad</option>
+                            <option>Economía</option>
+                            <option>Economía y Finanzas</option>
+                            <option>Economía y Negocios Internacionales</option>
                             <option>Enfermería</option>
                             <option>Ingeniería Comercial</option>
                             <option>Ingeniería Electrónica</option>
@@ -463,7 +473,9 @@
                             <option>Psicología Organizacional</option>
                             <option>Relaciones Internacionales</option>
                             <option>Sistemas</option>
-                            <option>Talento Humano</option>
+                            <option>Gestión de Talento Humano</option>
+                            <option>Ingeniería en Logística Global</option>
+                            <option>Inteligencia Artificial y Robótica</option>
                             <option value="No aplica / Externo">No aplica / Externo</option>
                         </select>
                     </div>
@@ -518,6 +530,18 @@
     const DESCARGA_STORAGE_KEY = 'unida_datos_descarga_v1';
     const CATALOGO_CACHE_KEY = 'unida_catalogo_global';
     const SIMULADORES_CACHE_KEY = 'unida_simuladores_global';
+
+    // Alias de carreras: permite mostrar registros antiguos de Firebase bajo el nombre actualizado.
+    const ALIAS_CARRERAS = {
+        "Gestión de Talento Humano": ["Gestión de Talento Humano", "Talento Humano", "Administración y Gestión del Talento Humano"],
+        "Ciencias de la Educación": ["Ciencias de la Educación", "Educación"],
+        "Adm. Gestión Emprendedora": ["Adm. Gestión Emprendedora", "Administración y Gestión Emprendedora"],
+        "Adm. de Empresas/Pública": ["Adm. de Empresas/Pública", "Administración Pública"]
+    };
+
+    function carrerasEquivalentes(carrera) {
+        return ALIAS_CARRERAS[carrera] || [carrera];
+    }
 
     // --- CARGA INMEDIATA: CACHE/ARCHIVO ESTÁTICO PRIMERO, FIREBASE DESPUÉS ---
     function cargarDatosInmediatos() {
@@ -671,7 +695,8 @@
         let librosFiltrados = window.catalogoLibros || [];
 
         if (carreraFiltrada) {
-            librosFiltrados = librosFiltrados.filter(libro => libro.carrera === carreraFiltrada);
+            const equivalentes = carrerasEquivalentes(carreraFiltrada);
+            librosFiltrados = librosFiltrados.filter(libro => equivalentes.includes(libro.carrera));
         }
 
         if (textoBusqueda) {
