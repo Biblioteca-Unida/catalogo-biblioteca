@@ -794,6 +794,13 @@
     let chartCarrerasInst = null;
     let chartFacultadesInst = null;
 
+    // --- CONTROL DE CONEXIONES FIREBASE (evita listeners duplicados) ---
+    let firebaseDataInicializada = false;
+    let auditoriaInicializada = false;
+    let unsubscribeLibros = null;
+    let unsubscribeSimuladores = null;
+    let unsubscribeAuditoria = null;
+
     const MAPA_FACULTADES = {
       "Medicina": "Salud", "Nutrición": "Salud", "Enfermería": "Salud", "Kinesiología y Fisioterapia": "Salud",
       "Ingeniería en Informática": "Ingeniería", "Ingeniería en Sistemas": "Ingeniería", "Ingeniería Industrial": "Ingeniería", "Ingeniería Electrónica": "Ingeniería",
@@ -819,8 +826,14 @@
     }
 
     function asegurarFirebase() {
-      if (!firebase.apps.length) firebase.initializeApp(obtenerConfigFirebase());
-      if (!db) db = firebase.firestore();
+      if (!firebase.apps.length) {
+        console.time('[UNIDA] Firebase app init');
+        firebase.initializeApp(obtenerConfigFirebase());
+        console.timeEnd('[UNIDA] Firebase app init');
+      }
+      if (!db) {
+        db = firebase.firestore();
+      }
       return firebase.auth();
     }
 
@@ -842,18 +855,23 @@
       err.classList.add('hidden');
       btn.disabled = true;
       btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i>Verificando...';
+
+      const inicioAuth = performance.now();
+      console.log('[UNIDA] Iniciando Firebase Auth...');
       try {
         const auth = asegurarFirebase();
         const cred = await auth.signInWithEmailAndPassword(email, password);
+        console.log(`[UNIDA] Auth completado en ${Math.round(performance.now() - inicioAuth)} ms`);
+
         if (!ADMIN_UIDS.has(cred.user.uid)) {
           await auth.signOut();
           throw new Error('Esta cuenta no está autorizada para administrar la biblioteca.');
         }
-        document.getElementById('auth-lock').classList.add('hidden');
-        document.getElementById('dashboard-app').classList.remove('hidden');
-        inicializarFirebase();
-        asignarPortadaTematica(true);
+
+        // IMPORTANTE: no inicializamos Firestore aquí.
+        // onAuthStateChanged es la única ruta que abre el panel y crea listeners.
       } catch (error) {
+        console.warn(`[UNIDA] Auth falló tras ${Math.round(performance.now() - inicioAuth)} ms`, error);
         const msg = error.message.includes('autorizada') ? error.message : 'Correo o contraseña incorrectos, o acceso no disponible.';
         err.textContent = msg;
         err.classList.remove('hidden');
@@ -864,6 +882,7 @@
     }
 
     async function cerrarSesion() {
+      limpiarListenersFirebase();
       try { if (firebase.apps.length) await firebase.auth().signOut(); } catch (_) {}
       document.getElementById('auth-password').value = '';
       mostrarLogin();
@@ -880,6 +899,9 @@
       const activo = boton || [...document.querySelectorAll('.nav-btn')]
         .find(b => (b.getAttribute('onclick') || '').includes(`'${id}'`));
       if (activo) activo.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-semibold transition text-[#1e3c6e] bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400";
+
+      // La bitácora puede crecer mucho: se conecta recién cuando el usuario la necesita.
+      if (id === 'tab-historial') inicializarAuditoriaBajoDemanda();
     }
 
     function toggleDarkMode() {
@@ -923,44 +945,110 @@
 
     function inicializarFirebase() {
       const user = firebase.apps.length ? firebase.auth().currentUser : null;
-      if (!user || !ADMIN_UIDS.has(user.uid)) {
+      if (!user || !ADMIN_UIDS.has(user.uid)) return;
+
+      // Segunda barrera contra inicializaciones duplicadas.
+      if (firebaseDataInicializada) {
+        console.log('[UNIDA] Firestore ya estaba inicializado; se evita crear listeners duplicados.');
         return;
       }
+      firebaseDataInicializada = true;
+
       const badge = document.getElementById('cloud-badge');
       const statusCanal = document.getElementById('kpi-status-canal');
+      const inicioFirestore = performance.now();
 
       try {
         asegurarFirebase();
-        db = firebase.firestore();
 
-        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> En Vivo`;
-        badge.className = "text-[11px] font-semibold text-emerald-500 flex items-center gap-1";
-        statusCanal.textContent = "Conectado (Cloud)";
-        statusCanal.className = "text-sm font-bold text-emerald-500 mt-2";
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> Conectando...`;
+        badge.className = "text-[11px] font-semibold text-amber-500 flex items-center gap-1";
+        statusCanal.textContent = "Conectando...";
+        statusCanal.className = "text-sm font-bold text-amber-500 mt-2";
 
-        db.collection("libros").onSnapshot(snapshot => {
+        let primeraCargaLibros = true;
+        let primeraCargaSimuladores = true;
+
+        unsubscribeLibros = db.collection('libros').onSnapshot(snapshot => {
           libros = [];
           snapshot.forEach(doc => { libros.push({ _id: doc.id, ...doc.data() }); });
           actualizarTodoUI();
-        }, error => { fallbackLocal(); });
 
-        db.collection("simuladores").onSnapshot(snapshot => {
+          if (primeraCargaLibros) {
+            primeraCargaLibros = false;
+            console.log(`[UNIDA] Primera carga de libros: ${snapshot.size} docs en ${Math.round(performance.now() - inicioFirestore)} ms`);
+            badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> En Vivo`;
+            badge.className = "text-[11px] font-semibold text-emerald-500 flex items-center gap-1";
+            statusCanal.textContent = "Conectado (Cloud)";
+            statusCanal.className = "text-sm font-bold text-emerald-500 mt-2";
+          }
+        }, error => {
+          console.warn('[UNIDA] Error listener libros:', error);
+          firebaseDataInicializada = false;
+          badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span> Modo local`;
+          statusCanal.textContent = "Respaldo local";
+          fallbackLocal();
+        });
+
+        unsubscribeSimuladores = db.collection('simuladores').onSnapshot(snapshot => {
           simuladores = [];
           snapshot.forEach(doc => { simuladores.push({ _id: doc.id, ...doc.data() }); });
           renderSimuladores();
-        });
+          if (primeraCargaSimuladores) {
+            primeraCargaSimuladores = false;
+            console.log(`[UNIDA] Primera carga de simuladores: ${snapshot.size} docs en ${Math.round(performance.now() - inicioFirestore)} ms`);
+          }
+        }, error => console.warn('[UNIDA] Error listener simuladores:', error));
 
-        db.collection("auditoria").orderBy("fecha", "desc").limit(500).onSnapshot(snapshot => {
-          historialAuditoria = [];
-          snapshot.forEach(doc => historialAuditoria.push({ _id: doc.id, ...doc.data() }));
-          renderHistorial();
-          const kc=document.getElementById('kpi-cambios'); if(kc) kc.textContent=historialAuditoria.length;
-        }, err => console.warn('No se pudo cargar auditoría:', err));
-
+        // Auditoría NO se carga en el arranque. Se inicializa al abrir Historial.
       } catch (e) {
+        firebaseDataInicializada = false;
         badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span> Error`;
+        statusCanal.textContent = "Error de conexión";
+        console.error('[UNIDA] Error inicializando Firestore:', e);
         fallbackLocal();
       }
+    }
+
+    function inicializarAuditoriaBajoDemanda() {
+      const user = firebase.apps.length ? firebase.auth().currentUser : null;
+      if (!user || !ADMIN_UIDS.has(user.uid) || auditoriaInicializada) return;
+
+      auditoriaInicializada = true;
+      const inicio = performance.now();
+      const contador = document.getElementById('historial-contador');
+      if (contador) contador.textContent = 'Cargando historial...';
+
+      try {
+        asegurarFirebase();
+        unsubscribeAuditoria = db.collection('auditoria')
+          .orderBy('fecha', 'desc')
+          .limit(500)
+          .onSnapshot(snapshot => {
+            historialAuditoria = [];
+            snapshot.forEach(doc => historialAuditoria.push({ _id: doc.id, ...doc.data() }));
+            renderHistorial();
+            const kc = document.getElementById('kpi-cambios');
+            if (kc) kc.textContent = historialAuditoria.length;
+            console.log(`[UNIDA] Auditoría bajo demanda: ${snapshot.size} eventos en ${Math.round(performance.now() - inicio)} ms`);
+          }, err => {
+            auditoriaInicializada = false;
+            console.warn('[UNIDA] No se pudo cargar auditoría:', err);
+            if (contador) contador.textContent = 'Error al cargar historial';
+          });
+      } catch (err) {
+        auditoriaInicializada = false;
+        console.warn('[UNIDA] Error preparando auditoría:', err);
+      }
+    }
+
+    function limpiarListenersFirebase() {
+      [unsubscribeLibros, unsubscribeSimuladores, unsubscribeAuditoria].forEach(unsub => {
+        try { if (typeof unsub === 'function') unsub(); } catch (_) {}
+      });
+      unsubscribeLibros = unsubscribeSimuladores = unsubscribeAuditoria = null;
+      firebaseDataInicializada = false;
+      auditoriaInicializada = false;
     }
 
     function fallbackLocal() {
@@ -1654,22 +1742,33 @@
       }
     }
 
-    // Restaurar sesión únicamente si Firebase confirma una identidad autorizada.
+    // ÚNICA ruta de apertura del panel: Firebase Auth confirma la sesión y recién luego conectamos datos.
     try {
       const auth = asegurarFirebase();
+      const inicioRestauracion = performance.now();
       auth.onAuthStateChanged(async (user) => {
-        if (!user) { mostrarLogin(); return; }
+        console.log(`[UNIDA] Estado Auth resuelto en ${Math.round(performance.now() - inicioRestauracion)} ms`);
+
+        if (!user) {
+          limpiarListenersFirebase();
+          mostrarLogin();
+          return;
+        }
         if (!ADMIN_UIDS.has(user.uid)) {
+          limpiarListenersFirebase();
           await auth.signOut();
           mostrarLogin('Esta cuenta no está autorizada para administrar la biblioteca.');
           return;
         }
+
+        // El panel aparece inmediatamente al confirmar identidad; Firestore carga después.
         document.getElementById('auth-lock').classList.add('hidden');
         document.getElementById('dashboard-app').classList.remove('hidden');
-        inicializarFirebase();
         asignarPortadaTematica(true);
+        inicializarFirebase();
       });
     } catch (e) {
+      console.error('[UNIDA] Error inicializando Firebase/Auth:', e);
       mostrarLogin('No se pudo inicializar Firebase. Revisa la configuración del proyecto.');
     }
   </script>
