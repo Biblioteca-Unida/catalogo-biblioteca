@@ -113,6 +113,9 @@
           <button onclick="navegarPestana('tab-descargas', this)" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-medium transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
             <i class="fas fa-download w-5 text-center"></i> Descargas & Uso
           </button>
+          <button onclick="navegarPestana('tab-seguridad', this)" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-medium transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+            <i class="fas fa-shield-halved w-5 text-center"></i> Seguridad & Alertas
+          </button>
           <button onclick="navegarPestana('tab-database', this)" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-medium transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
             <i class="fas fa-file-excel w-5 text-center"></i> Base de Datos & Excel
           </button>
@@ -254,16 +257,25 @@
                         <option value="Comercio Internacional">Comercio Internacional</option>
                         <option value="Relaciones Internacionales">Relaciones Internacionales</option>
                       </optgroup>
-                      <optgroup label="Ciencias Jurídicas y FEADYS">
+                      <optgroup label="Facultad de C. Jurídicas y Sociales">
                         <option value="Derecho">Derecho</option>
                         <option value="Ciencias Políticas">Ciencias Políticas</option>
-                        <option value="Educación">Educación</option>
+                      </optgroup>
+                      <optgroup label="FEADYS">
                         <option value="Adm. de Empresas/Pública">Adm. de Empresas/Pública</option>
                         <option value="Adm. Gestión Emprendedora">Adm. Gestión Emprendedora</option>
-                        <option value="Talento Humano">Talento Humano</option>
+                        <option value="Gestión de Talento Humano">Gestión de Talento Humano</option>
                         <option value="Banca y Finanzas">Banca y Finanzas</option>
+                        <option value="Ciencias de la Educación">Ciencias de la Educación</option>
+                        <option value="Comunicación y Publicidad">Comunicación y Publicidad</option>
+                        <option value="Economía">Economía</option>
+                        <option value="Economía y Finanzas">Economía y Finanzas</option>
+                        <option value="Economía y Negocios Internacionales">Economía y Negocios Internacionales</option>
+                        <option value="Ingeniería en Logística Global">Ingeniería en Logística Global</option>
+                        <option value="Inteligencia Artificial y Robótica">Inteligencia Artificial y Robótica</option>
                         <option value="Marketing Digital">Marketing Digital</option>
                         <option value="Sistemas">Sistemas</option>
+                        <option value="Relaciones Internacionales">Relaciones Internacionales</option>
                       </optgroup>
                     </select>
                   </div>
@@ -530,6 +542,46 @@
                   </tr>
                 </thead>
                 <tbody id="descargas-cuerpo"><tr><td colspan="9" class="p-10 text-center text-slate-400">Sin datos cargados.</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- SEGURIDAD Y ALERTAS -->
+        <section id="tab-seguridad" class="tab-content space-y-6 hidden">
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div>
+              <h3 class="text-lg font-bold text-slate-800 dark:text-white">Seguridad & Alertas</h3>
+              <p class="text-xs text-slate-500">Eventos detectados automáticamente a partir de patrones anómalos de descarga.</p>
+            </div>
+            <button onclick="recargarSeguridad()" class="bg-[#1e3c6e] hover:bg-[#2980b9] text-white px-4 py-2.5 rounded-xl text-xs font-bold shadow-md transition">
+              <i class="fas fa-rotate mr-1"></i> Recargar
+            </button>
+          </div>
+
+          <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+            <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm"><span class="text-[10px] font-bold text-slate-400 uppercase">Eventos totales</span><strong id="seg-kpi-total" class="block text-2xl mt-2 text-[#1e3c6e] dark:text-white">0</strong></div>
+            <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm"><span class="text-[10px] font-bold text-slate-400 uppercase">Hoy</span><strong id="seg-kpi-hoy" class="block text-2xl mt-2 text-indigo-600">0</strong></div>
+            <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm"><span class="text-[10px] font-bold text-slate-400 uppercase">Alta / Crítica</span><strong id="seg-kpi-altas" class="block text-2xl mt-2 text-rose-600">0</strong></div>
+            <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm"><span class="text-[10px] font-bold text-slate-400 uppercase">Telegram enviados</span><strong id="seg-kpi-telegram" class="block text-2xl mt-2 text-sky-600">0</strong></div>
+            <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm"><span class="text-[10px] font-bold text-slate-400 uppercase">Último evento</span><strong id="seg-kpi-ultimo" class="block text-sm mt-2 text-slate-700 dark:text-slate-200">—</strong></div>
+          </div>
+
+          <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+            <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex flex-col lg:flex-row lg:items-center gap-3">
+              <div>
+                <h4 class="text-sm font-bold text-slate-800 dark:text-white">Eventos de seguridad</h4>
+                <p id="seguridad-estado" class="text-[11px] text-slate-400">Abrí esta pestaña para cargar los eventos.</p>
+              </div>
+              <div class="lg:ml-auto flex flex-wrap gap-2">
+                <input id="seg-buscar" oninput="renderSeguridad()" placeholder="Buscar usuario, libro o detalle..." class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs outline-none w-64">
+                <select id="seg-nivel" onchange="renderSeguridad()" class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs"><option value="">Todos los niveles</option><option value="CRITICO">Crítico</option><option value="ALTO">Alto</option><option value="MEDIO">Medio</option><option value="INFO">Info</option></select>
+              </div>
+            </div>
+            <div class="overflow-x-auto max-h-[620px] custom-scroll">
+              <table class="w-full text-xs min-w-[1150px]">
+                <thead class="sticky top-0 bg-slate-50 dark:bg-slate-800 z-10"><tr><th class="p-3 text-left">Fecha</th><th class="p-3 text-left">Nivel</th><th class="p-3 text-left">Tipo</th><th class="p-3 text-left">Usuario</th><th class="p-3 text-left">Matrícula</th><th class="p-3 text-left">Libro</th><th class="p-3 text-left">Detalle</th><th class="p-3 text-left">Telegram</th></tr></thead>
+                <tbody id="seguridad-cuerpo"><tr><td colspan="8" class="p-10 text-center text-slate-400">Sin eventos cargados.</td></tr></tbody>
               </table>
             </div>
           </div>
@@ -870,15 +922,30 @@
     let unsubscribeDescargas = null;
     let chartDescargasCarreraInst = null;
     let chartDescargasLibrosInst = null;
+    let eventosSeguridad = [];
+    let seguridadInicializada = false;
+    let unsubscribeSeguridad = null;
 
     const MAPA_FACULTADES = {
       "Medicina": "Salud", "Nutrición": "Salud", "Enfermería": "Salud", "Kinesiología y Fisioterapia": "Salud",
       "Ingeniería en Informática": "Ingeniería", "Ingeniería en Sistemas": "Ingeniería", "Ingeniería Industrial": "Ingeniería", "Ingeniería Electrónica": "Ingeniería",
-      "Marketing y Gestión Comercial": "FEADYS", "Psicología Organizacional": "FEADYS", "Ingeniería Comercial": "FEADYS", "Administración de Empresas": "FEADYS", "Contaduría Pública": "FEADYS", "Comercio Internacional": "FEADYS", "Relaciones Internacionales": "FEADYS",
+      "Marketing y Gestión Comercial": "Gestión", "Psicología Organizacional": "Gestión", "Ingeniería Comercial": "Gestión", "Administración de Empresas": "Gestión", "Contaduría Pública": "Gestión", "Comercio Internacional": "Gestión", "Relaciones Internacionales y Negocios Globales": "Gestión",
       "Derecho": "Jurídicas_y_Sociales", "Ciencias Políticas": "Jurídicas_y_Sociales",
-      "Adm. de Empresas/Pública": "Gestión", "Adm. Gestión Emprendedora": "Gestión", "Talento Humano": "Gestión", "Banca y Finanzas": "Gestión", "Educación": "Gestión", "Marketing Digital": "Gestión", "Sistemas": "Gestión",
+      "Adm. de Empresas/Pública": "FEADYS", "Administración Pública": "FEADYS", "Adm. Gestión Emprendedora": "FEADYS", "Administración y Gestión Emprendedora": "FEADYS", "Talento Humano": "FEADYS", "Gestión de Talento Humano": "FEADYS", "Administración y Gestión del Talento Humano": "FEADYS", "Banca y Finanzas": "FEADYS", "Educación": "FEADYS", "Ciencias de la Educación": "FEADYS", "Comunicación y Publicidad": "FEADYS", "Economía": "FEADYS", "Economía y Finanzas": "FEADYS", "Economía y Negocios Internacionales": "FEADYS", "Ingeniería en Logística Global": "FEADYS", "Inteligencia Artificial y Robótica": "FEADYS", "Marketing Digital": "FEADYS", "Sistemas": "FEADYS", "Relaciones Internacionales": "FEADYS",
       "PPT": "Club_de_Lectura"
     };
+
+    const ALIAS_CARRERAS_ADMIN = {
+      "Talento Humano": "Gestión de Talento Humano",
+      "Administración y Gestión del Talento Humano": "Gestión de Talento Humano",
+      "Educación": "Ciencias de la Educación",
+      "Administración y Gestión Emprendedora": "Adm. Gestión Emprendedora",
+      "Administración Pública": "Adm. de Empresas/Pública"
+    };
+
+    function carreraCanonica(carrera) {
+      return ALIAS_CARRERAS_ADMIN[carrera] || carrera;
+    }
 
     const PORTADAS_PRESET = {
       "Medicina": "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=300&q=80",
@@ -887,7 +954,14 @@
       "Ingeniería en Informática": "https://images.unsplash.com/photo-1509228468518-180dd4864904?auto=format&fit=crop&w=300&q=80",
       "Administración de Empresas": "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=300&q=80",
       "Derecho": "https://images.unsplash.com/photo-1505664194779-8beaceb93744?auto=format&fit=crop&w=300&q=80",
-      "Educación": "https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=300&q=80"
+      "Ciencias de la Educación": "https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=300&q=80",
+      "Gestión de Talento Humano": "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=300&q=80",
+      "Comunicación y Publicidad": "https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&w=300&q=80",
+      "Economía": "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?auto=format&fit=crop&w=300&q=80",
+      "Economía y Finanzas": "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=300&q=80",
+      "Economía y Negocios Internacionales": "https://images.unsplash.com/photo-1521791055366-0d553872125f?auto=format&fit=crop&w=300&q=80",
+      "Ingeniería en Logística Global": "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=300&q=80",
+      "Inteligencia Artificial y Robótica": "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=300&q=80"
     };
 
     function obtenerConfigFirebase() {
@@ -973,6 +1047,7 @@
       // La bitácora puede crecer mucho: se conecta recién cuando el usuario la necesita.
       if (id === 'tab-historial') inicializarAuditoriaBajoDemanda();
       if (id === 'tab-descargas') inicializarDescargasBajoDemanda();
+      if (id === 'tab-seguridad') inicializarSeguridadBajoDemanda();
     }
 
     function toggleDarkMode() {
@@ -1323,15 +1398,116 @@
       setTimeout(()=>URL.revokeObjectURL(a.href),1000);
     }
 
+    // --- SEGURIDAD & ALERTAS ---
+    function inicializarSeguridadBajoDemanda(forzar = false) {
+      const user = firebase.apps.length ? firebase.auth().currentUser : null;
+      if (!user || !ADMIN_UIDS.has(user.uid)) return;
+      if (seguridadInicializada && !forzar) { renderSeguridad(); return; }
+
+      if (forzar && typeof unsubscribeSeguridad === 'function') {
+        try { unsubscribeSeguridad(); } catch (_) {}
+        unsubscribeSeguridad = null;
+        seguridadInicializada = false;
+      }
+
+      seguridadInicializada = true;
+      const estado = document.getElementById('seguridad-estado');
+      const inicio = performance.now();
+      if (estado) estado.textContent = 'Cargando eventos de seguridad desde Firestore...';
+
+      try {
+        asegurarFirebase();
+        unsubscribeSeguridad = db.collection('eventos_seguridad').orderBy('fecha', 'desc').limit(500).onSnapshot(snapshot => {
+          eventosSeguridad = [];
+          snapshot.forEach(doc => eventosSeguridad.push({ _id: doc.id, ...doc.data() }));
+          renderSeguridad();
+          if (estado) estado.textContent = `Sincronizado con Firestore · ${snapshot.size} eventos`;
+          console.log(`[UNIDA] Seguridad bajo demanda: ${snapshot.size} eventos en ${Math.round(performance.now() - inicio)} ms`);
+        }, err => {
+          seguridadInicializada = false;
+          console.warn('[UNIDA] No se pudieron cargar eventos de seguridad:', err);
+          if (estado) estado.textContent = 'No se pudieron cargar eventos. Revisá las reglas de Firestore.';
+        });
+      } catch (err) {
+        seguridadInicializada = false;
+        console.warn('[UNIDA] Error preparando seguridad:', err);
+        if (estado) estado.textContent = 'No se pudo iniciar la consulta de seguridad.';
+      }
+    }
+
+    function recargarSeguridad() { inicializarSeguridadBajoDemanda(true); }
+
+    function nivelBadgeSeguridad(nivel) {
+      const n = String(nivel || 'INFO').toUpperCase();
+      const map = {
+        CRITICO: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300',
+        ALTO: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
+        MEDIO: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+        INFO: 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300'
+      };
+      return `<span class="px-2 py-1 rounded-lg text-[10px] font-bold ${map[n] || map.INFO}">${escapeHtml(n)}</span>`;
+    }
+
+    function renderSeguridad() {
+      const tb = document.getElementById('seguridad-cuerpo');
+      const q = normalizarClave(document.getElementById('seg-buscar')?.value || '');
+      const nivel = document.getElementById('seg-nivel')?.value || '';
+      const arr = eventosSeguridad.filter(e => {
+        if (nivel && String(e.nivel || '').toUpperCase() !== nivel) return false;
+        if (q) {
+          const u = e.usuario || {}, l = e.libro || {};
+          const bolsa = normalizarClave(`${e.tipo || ''} ${e.titulo || ''} ${e.detalle || ''} ${u.nombres || ''} ${u.apellidos || ''} ${u.matricula || ''} ${u.correo || ''} ${l.titulo || ''} ${l.autor || ''}`);
+          if (!bolsa.includes(q)) return false;
+        }
+        return true;
+      });
+
+      const hoy = new Date();
+      const totalHoy = eventosSeguridad.filter(e => {
+        const d = fechaDescargaDate(e.fecha);
+        return d && d.getFullYear() === hoy.getFullYear() && d.getMonth() === hoy.getMonth() && d.getDate() === hoy.getDate();
+      }).length;
+      const altas = eventosSeguridad.filter(e => ['ALTO','CRITICO'].includes(String(e.nivel || '').toUpperCase())).length;
+      const telegram = eventosSeguridad.filter(e => e.telegramEnviado === true).length;
+      const ultimo = eventosSeguridad.length ? fechaDescargaTexto(eventosSeguridad[0].fecha) : '—';
+      const setText=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v;};
+      setText('seg-kpi-total', eventosSeguridad.length);
+      setText('seg-kpi-hoy', totalHoy);
+      setText('seg-kpi-altas', altas);
+      setText('seg-kpi-telegram', telegram);
+      setText('seg-kpi-ultimo', ultimo);
+
+      if (!tb) return;
+      if (!arr.length) {
+        tb.innerHTML = '<tr><td colspan="8" class="p-10 text-center text-slate-400">No hay eventos para los filtros seleccionados.</td></tr>';
+        return;
+      }
+      tb.innerHTML = arr.map(e => {
+        const u=e.usuario||{}, l=e.libro||{};
+        return `<tr class="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50/70 dark:hover:bg-slate-800/40">
+          <td class="p-3 whitespace-nowrap">${escapeHtml(fechaDescargaTexto(e.fecha))}</td>
+          <td class="p-3">${nivelBadgeSeguridad(e.nivel)}</td>
+          <td class="p-3 font-semibold">${escapeHtml(e.tipo || '-')}</td>
+          <td class="p-3">${escapeHtml(`${u.nombres || ''} ${u.apellidos || ''}`.trim() || '-')}<div class="text-[10px] text-slate-400 mt-1">${escapeHtml(u.correo || '')}</div></td>
+          <td class="p-3 font-mono">${escapeHtml(u.matricula || '-')}</td>
+          <td class="p-3 max-w-[260px]">${escapeHtml(textoPlano(l.titulo || '-'))}<div class="text-[10px] text-slate-400 mt-1">${escapeHtml(l.autor || '')}</div></td>
+          <td class="p-3 max-w-[360px]">${escapeHtml(e.detalle || e.titulo || '-')}<div class="text-[10px] text-slate-400 mt-1">${e.conteo ? `${escapeHtml(e.conteo)} eventos / ${escapeHtml(e.ventanaMinutos || 2)} min` : ''}</div></td>
+          <td class="p-3">${e.telegramEnviado === true ? '<span class="text-emerald-600 font-bold">Enviado</span>' : (e.telegramError ? '<span class="text-rose-600" title="'+escapeHtml(e.telegramError)+'">Error</span>' : '<span class="text-slate-400">Pendiente</span>')}</td>
+        </tr>`;
+      }).join('');
+    }
+
     function limpiarListenersFirebase() {
-      [unsubscribeLibros, unsubscribeSimuladores, unsubscribeAuditoria, unsubscribeDescargas].forEach(unsub => {
+      [unsubscribeLibros, unsubscribeSimuladores, unsubscribeAuditoria, unsubscribeDescargas, unsubscribeSeguridad].forEach(unsub => {
         try { if (typeof unsub === 'function') unsub(); } catch (_) {}
       });
-      unsubscribeLibros = unsubscribeSimuladores = unsubscribeAuditoria = unsubscribeDescargas = null;
+      unsubscribeLibros = unsubscribeSimuladores = unsubscribeAuditoria = unsubscribeDescargas = unsubscribeSeguridad = null;
       firebaseDataInicializada = false;
       auditoriaInicializada = false;
       descargasInicializadas = false;
+      seguridadInicializada = false;
       descargas = [];
+      eventosSeguridad = [];
     }
 
     function fallbackLocal() {
@@ -1561,7 +1737,7 @@
     function editarLibro(i) {
       const l = libros[i];
       document.getElementById('edit-doc-id').value = l._id || "";
-      document.getElementById('inp-carrera').value = l.carrera;
+      document.getElementById('inp-carrera').value = carreraCanonica(l.carrera);
       
       if (l.titulo.includes('<span class="libro-edicion">')) {
         const parts = l.titulo.split('<span class="libro-edicion">');
