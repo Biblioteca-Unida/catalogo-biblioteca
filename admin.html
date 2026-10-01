@@ -887,6 +887,12 @@
       "dluJBFMgXuQSKGka65Hz00EA3Bl2"
     ]);
     const FB_STORAGE_KEY = "unida_firebase_config";
+
+    // --- ALERTA DE ACCESO AL ADMIN ---
+    // Pegá aquí la URL /exec del Web App de Google Apps Script cuando lo publiques.
+    const ALERTA_ACCESO_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbx6SMYyRS-8mX-UhTP0JT8OPLPptDYbFmUnkZ_DWxxmEGnaq4fhgm598-euAmGDF4Wf/exec";
+    const ALERTA_SESSION_KEY = "unida_alerta_acceso_enviada_v1";
+    let accesoPorLoginExplicito = false;
     // Config por defecto del proyecto "biblioteca-unida". Se usa siempre que
     // no haya una config distinta guardada manualmente en este navegador
     // (vía el botón "Conectar Firebase"), para no depender de configurar
@@ -1012,6 +1018,9 @@
           throw new Error('Esta cuenta no está autorizada para administrar la biblioteca.');
         }
 
+        // Marcamos que este acceso provino de un login manual, no solo de una sesión restaurada.
+        accesoPorLoginExplicito = true;
+
         // IMPORTANTE: no inicializamos Firestore aquí.
         // onAuthStateChanged es la única ruta que abre el panel y crea listeners.
       } catch (error) {
@@ -1025,10 +1034,56 @@
       }
     }
 
+    async function notificarAccesoAdmin(user, tipoAcceso = 'sesion_restaurada') {
+      if (!user || !ADMIN_UIDS.has(user.uid)) return;
+
+      // Evita duplicar avisos dentro de la misma pestaña/sesión del navegador.
+      if (sessionStorage.getItem(ALERTA_SESSION_KEY) === '1') return;
+
+      if (!ALERTA_ACCESO_WEBAPP_URL || ALERTA_ACCESO_WEBAPP_URL.includes('PEGAR_AQUI')) {
+        console.info('[UNIDA] Alerta de acceso pendiente: falta configurar la URL de Apps Script.');
+        return;
+      }
+
+      try {
+        const idToken = await user.getIdToken();
+        const sessionId = (crypto && crypto.randomUUID)
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+        const payload = {
+          idToken,
+          tipoAcceso,
+          sessionId,
+          pagina: location.href,
+          userAgent: navigator.userAgent || '',
+          plataforma: navigator.platform || '',
+          idioma: navigator.language || '',
+          fechaCliente: new Date().toISOString()
+        };
+
+        // text/plain evita preflight CORS; no-cors permite enviar el aviso desde GitHub Pages.
+        await fetch(ALERTA_ACCESO_WEBAPP_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+          body: JSON.stringify(payload),
+          keepalive: true
+        });
+
+        sessionStorage.setItem(ALERTA_SESSION_KEY, '1');
+        console.log('[UNIDA] Alerta de acceso enviada.');
+      } catch (error) {
+        console.warn('[UNIDA] No se pudo enviar la alerta de acceso:', error);
+      }
+    }
+
     async function cerrarSesion() {
       limpiarListenersFirebase();
       try { if (firebase.apps.length) await firebase.auth().signOut(); } catch (_) {}
       document.getElementById('auth-password').value = '';
+      sessionStorage.removeItem(ALERTA_SESSION_KEY);
+      accesoPorLoginExplicito = false;
       mostrarLogin();
     }
 
@@ -2219,6 +2274,12 @@
           mostrarLogin('Esta cuenta no está autorizada para administrar la biblioteca.');
           return;
         }
+
+        // Avisamos por canal externo cada vez que esta pestaña obtiene acceso autorizado.
+        // No bloqueamos la apertura del panel si el servicio de alertas falla.
+        const tipoAcceso = accesoPorLoginExplicito ? 'inicio_sesion' : 'sesion_restaurada';
+        notificarAccesoAdmin(user, tipoAcceso);
+        accesoPorLoginExplicito = false;
 
         // El panel aparece inmediatamente al confirmar identidad; Firestore carga después.
         document.getElementById('auth-lock').classList.add('hidden');
