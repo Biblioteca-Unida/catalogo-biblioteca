@@ -1037,8 +1037,9 @@
     async function notificarAccesoAdmin(user, tipoAcceso = 'sesion_restaurada') {
       if (!user || !ADMIN_UIDS.has(user.uid)) return;
 
-      // Evita duplicar avisos dentro de la misma pestaña/sesión del navegador.
-      if (sessionStorage.getItem(ALERTA_SESSION_KEY) === '1') return;
+      // Para sesiones restauradas evitamos avisos repetidos por simples recargas.
+      // Los inicios de sesión manuales SIEMPRE generan alerta.
+      if (tipoAcceso !== 'inicio_sesion' && sessionStorage.getItem(ALERTA_SESSION_KEY) === '1') return;
 
       if (!ALERTA_ACCESO_WEBAPP_URL || ALERTA_ACCESO_WEBAPP_URL.includes('PEGAR_AQUI')) {
         console.info('[UNIDA] Alerta de acceso pendiente: falta configurar la URL de Apps Script.');
@@ -1046,8 +1047,8 @@
       }
 
       try {
-        const idToken = await user.getIdToken();
-        const sessionId = (crypto && crypto.randomUUID)
+        const idToken = await user.getIdToken(true);
+        const sessionId = (window.crypto && crypto.randomUUID)
           ? crypto.randomUUID()
           : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
@@ -1062,19 +1063,45 @@
           fechaCliente: new Date().toISOString()
         };
 
-        // text/plain evita preflight CORS; no-cors permite enviar el aviso desde GitHub Pages.
-        await fetch(ALERTA_ACCESO_WEBAPP_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-          body: JSON.stringify(payload),
-          keepalive: true
-        });
+        // Apps Script suele redirigir las respuestas de Web Apps y fetch/no-cors
+        // puede terminar en 404 sin poder inspeccionar la respuesta.
+        // Enviamos el POST con un formulario oculto apuntando a un iframe.
+        const frameName = `unida_alerta_frame_${Date.now()}`;
+        const iframe = document.createElement('iframe');
+        iframe.name = frameName;
+        iframe.style.display = 'none';
+        iframe.setAttribute('aria-hidden', 'true');
 
-        sessionStorage.setItem(ALERTA_SESSION_KEY, '1');
-        console.log('[UNIDA] Alerta de acceso enviada.');
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = ALERTA_ACCESO_WEBAPP_URL;
+        form.target = frameName;
+        form.style.display = 'none';
+
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'payload';
+        input.value = JSON.stringify(payload);
+
+        form.appendChild(input);
+        document.body.appendChild(iframe);
+        document.body.appendChild(form);
+
+        form.submit();
+
+        if (tipoAcceso !== 'inicio_sesion') {
+          sessionStorage.setItem(ALERTA_SESSION_KEY, '1');
+        }
+
+        console.log('[UNIDA] Solicitud de alerta de acceso enviada a Apps Script.');
+
+        setTimeout(() => {
+          try { form.remove(); } catch (_) {}
+          try { iframe.remove(); } catch (_) {}
+        }, 15000);
+
       } catch (error) {
-        console.warn('[UNIDA] No se pudo enviar la alerta de acceso:', error);
+        console.warn('[UNIDA] No se pudo preparar/enviar la alerta de acceso:', error);
       }
     }
 
