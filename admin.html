@@ -1031,10 +1031,26 @@
         // IMPORTANTE: no inicializamos Firestore aquí.
         // onAuthStateChanged es la única ruta que abre el panel y crea listeners.
       } catch (error) {
-        console.warn(`[UNIDA] Auth falló tras ${Math.round(performance.now() - inicioAuth)} ms`, error);
-        const msg = error.message.includes('autorizada') ? error.message : 'Correo o contraseña incorrectos, o acceso no disponible.';
-        err.textContent = msg;
-        err.classList.remove('hidden');
+        console.warn(
+    `[UNIDA] Auth falló tras ${Math.round(performance.now() - inicioAuth)} ms`,
+    error
+  );
+
+  // Aviso externo de intento fallido.
+  // Nunca se envía la contraseña.
+  notificarLoginFallido(
+    email,
+    error
+  );
+
+  const msg =
+    error.message.includes('autorizada')
+      ? error.message
+      : 'Correo o contraseña incorrectos, o acceso no disponible.';
+
+  err.textContent = msg;
+  err.classList.remove('hidden');
+
       } finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-right-to-bracket mr-2"></i>Iniciar sesión';
@@ -1111,6 +1127,167 @@
         console.warn('[UNIDA] No se pudo preparar/enviar la alerta de acceso:', error);
       }
     }
+
+    async function notificarLoginFallido(
+  email,
+  error
+) {
+
+  if (
+    !ALERTA_ACCESO_WEBAPP_URL ||
+    ALERTA_ACCESO_WEBAPP_URL.includes(
+      'PEGAR_AQUI'
+    )
+  ) {
+    console.info(
+      '[UNIDA] Alerta de login fallido no enviada: Web App no configurada.'
+    );
+    return;
+  }
+
+
+  try {
+
+    const sessionId =
+      window.crypto &&
+      crypto.randomUUID
+
+        ? crypto.randomUUID()
+
+        : `${Date.now()}-${Math.random()
+            .toString(36)
+            .slice(2)}`;
+
+
+    const payload = {
+
+      tipoEvento:
+        'login_fallido',
+
+      email:
+        String(email || '')
+          .trim()
+          .toLowerCase(),
+
+      errorCode:
+        error &&
+        error.code
+          ? String(error.code)
+          : 'desconocido',
+
+      sessionId,
+
+      pagina:
+        location.href,
+
+      userAgent:
+        navigator.userAgent || '',
+
+      plataforma:
+        navigator.platform || '',
+
+      idioma:
+        navigator.language || '',
+
+      fechaCliente:
+        new Date().toISOString()
+    };
+
+
+    const frameName =
+      `unida_fallo_frame_${Date.now()}`;
+
+
+    const iframe =
+      document.createElement(
+        'iframe'
+      );
+
+    iframe.name =
+      frameName;
+
+    iframe.style.display =
+      'none';
+
+    iframe.setAttribute(
+      'aria-hidden',
+      'true'
+    );
+
+
+    const form =
+      document.createElement(
+        'form'
+      );
+
+    form.method =
+      'POST';
+
+    form.action =
+      ALERTA_ACCESO_WEBAPP_URL;
+
+    form.target =
+      frameName;
+
+    form.style.display =
+      'none';
+
+
+    const input =
+      document.createElement(
+        'input'
+      );
+
+    input.type =
+      'hidden';
+
+    input.name =
+      'payload';
+
+    input.value =
+      JSON.stringify(payload);
+
+
+    form.appendChild(input);
+
+    document.body.appendChild(
+      iframe
+    );
+
+    document.body.appendChild(
+      form
+    );
+
+
+    form.submit();
+
+
+    console.log(
+      '[UNIDA] Alerta de login fallido enviada.'
+    );
+
+
+    setTimeout(() => {
+
+      try {
+        form.remove();
+      } catch (_) {}
+
+      try {
+        iframe.remove();
+      } catch (_) {}
+
+    }, 15000);
+
+
+  } catch (errorEnvio) {
+
+    console.warn(
+      '[UNIDA] No se pudo enviar alerta de login fallido:',
+      errorEnvio
+    );
+  }
+}
 
     async function cerrarSesion() {
       limpiarListenersFirebase();
