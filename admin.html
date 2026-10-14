@@ -98,6 +98,9 @@
           <button onclick="navegarPestana('tab-libros', this)" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-medium transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
             <i class="fas fa-book-medical w-5 text-center"></i> Gestión de Libros
           </button>
+          <button onclick="abrirTabCatalogosImpresos(this)" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-medium transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+            <i class="fas fa-book-bookmark w-5 text-center"></i> Catálogos Impresos
+          </button>
           <button onclick="navegarPestana('tab-simuladores', this)" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-xs font-medium transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
             <i class="fas fa-laptop-code w-5 text-center"></i> Simuladores 3D
           </button>
@@ -215,6 +218,40 @@
           </div>
         </section>
 
+
+        <!-- NUEVO: Catálogos de biblioteca impresa, documentos de Google Drive -->
+        <section id="tab-catalogos-impresos" class="tab-content hidden space-y-6">
+          <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-7 space-y-4">
+            <h3 class="text-lg font-bold">Catálogos de Biblioteca Impresa</h3>
+            <p class="text-xs text-slate-500">Registrá aquí los PDF o PowerPoint almacenados en Google Drive. No se cargan archivos al sitio ni se mezclan con los libros digitales.</p>
+            <form id="form-catalogo-impreso" onsubmit="guardarCatalogoImpreso(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input type="hidden" id="imp-id">
+              <label class="text-xs font-semibold">Facultad *
+                <select id="imp-facultad" required onchange="actualizarCarrerasImpresasAdmin()" class="mt-1 w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700"></select>
+              </label>
+              <label class="text-xs font-semibold">Carrera *
+                <select id="imp-carrera" required class="mt-1 w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700"></select>
+              </label>
+              <label class="text-xs font-semibold md:col-span-2">Nombre del catálogo *
+                <input id="imp-titulo" required maxlength="180" placeholder="Ej.: Catálogo impreso Bioquímica 2026" class="mt-1 w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700">
+              </label>
+              <label class="text-xs font-semibold md:col-span-2">Enlace Google Drive del PDF o PPT *
+                <input id="imp-link" type="url" required placeholder="https://drive.google.com/file/d/.../view" class="mt-1 w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700">
+              </label>
+              <label class="text-xs font-semibold flex items-center gap-2"><input type="checkbox" id="imp-activo" checked> Visible en el catálogo público</label>
+              <div class="flex gap-2 md:col-span-2">
+                <button id="imp-guardar" type="submit" class="px-5 py-3 bg-[#1e3c6e] text-white rounded-xl text-xs font-semibold">Guardar catálogo</button>
+                <button type="button" onclick="limpiarCatalogoImpresoAdmin()" class="px-5 py-3 bg-slate-200 dark:bg-slate-800 rounded-xl text-xs">Cancelar / Nuevo</button>
+              </div>
+            </form>
+            <p id="imp-estado" class="text-xs text-slate-500" role="status"></p>
+          </div>
+          <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6">
+            <h4 class="font-bold mb-4">Catálogos registrados</h4>
+            <div id="imp-listado" class="space-y-3 text-xs">Abrí este apartado para consultar los catálogos.</div>
+          </div>
+        </section>
+
         <!-- PESTAÑA 2: GESTIÓN DE LIBROS -->
         <section id="tab-libros" class="tab-content space-y-8 hidden">
           <div class="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -237,7 +274,8 @@
                     <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Carrera / Área *</label>
                     <select id="inp-carrera" onchange="asignarPortadaTematica(); actualizarPreview();" required class="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium focus:ring-2 focus:ring-blue-500 outline-none">
                       <optgroup label="Facultad de Salud">
-                        <option value="Medicina">Medicina</option>
+                        <option value="Bioquímica">Bioquímica</option>
+                         <option value="Medicina">Medicina</option>
                         <option value="Nutrición">Nutrición</option>
                         <option value="Enfermería">Enfermería</option>
                         <option value="Kinesiología y Fisioterapia">Kinesiología y Fisioterapia</option>
@@ -910,6 +948,8 @@
     
     let db = null;
     let libros = [];
+    let catalogosImpresosAdmin = [];
+    let unsubscribeCatalogosImpresos = null;
     let simuladores = [];
     let historialAuditoria = [];
     let paginaTabla = 1;
@@ -935,7 +975,7 @@
     let unsubscribeSeguridad = null;
 
     const MAPA_FACULTADES = {
-      "Medicina": "Salud", "Nutrición": "Salud", "Enfermería": "Salud", "Kinesiología y Fisioterapia": "Salud",
+      "Bioquímica": "Salud", "Medicina": "Salud", "Nutrición": "Salud", "Enfermería": "Salud", "Kinesiología y Fisioterapia": "Salud",
       "Ingeniería en Informática": "Ingeniería", "Ingeniería en Sistemas": "Ingeniería", "Ingeniería Industrial": "Ingeniería", "Ingeniería Electrónica": "Ingeniería",
       "Marketing y Gestión Comercial": "Gestión", "Psicología Organizacional": "Gestión", "Ingeniería Comercial": "Gestión", "Administración de Empresas": "Gestión", "Contaduría Pública": "Gestión", "Comercio Internacional": "Gestión", "Relaciones Internacionales y Negocios Globales": "Gestión",
       "Derecho": "Jurídicas_y_Sociales", "Ciencias Políticas": "Jurídicas_y_Sociales",
@@ -956,6 +996,7 @@
     }
 
     const PORTADAS_PRESET = {
+      "Bioquímica": "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=300&q=80",
       "Medicina": "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=300&q=80",
       "Nutrición": "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=300&q=80",
       "Enfermería": "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=300&q=80",
@@ -1969,6 +2010,106 @@
       if(!db) return alert('Conectá Firebase para generar un backup completo.');
       const btn=document.querySelector('button[onclick="descargarBackupCompleto()"]'); const old=btn?.innerHTML; if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Preparando backup...';}
       try{ const [lb,sm,au]=await Promise.all([db.collection('libros').get(),db.collection('simuladores').get(),db.collection('auditoria').get()]); const conv=s=>s.docs.map(d=>({id:d.id,...d.data(),fecha:d.data().fecha?.toDate?d.data().fecha.toDate().toISOString():d.data().fecha||null})); const data={formato:'UNIDA-BACKUP-1',generado:new Date().toISOString(),generadoPor:usuarioActual().email,conteos:{libros:lb.size,simuladores:sm.size,auditoria:au.size},libros:conv(lb),simuladores:conv(sm),auditoria:conv(au)}; const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`Backup_UNIDA_${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);await registrarAuditoria('crear','backup','',`Backup ${data.generado}`,data.conteos); }catch(e){alert('No se pudo generar el backup: '+e.message);}finally{if(btn){btn.disabled=false;btn.innerHTML=old;}}
+    }
+
+
+    // --- CATÁLOGOS IMPRESOS: colección aislada de los libros digitales ---
+    const CARRERAS_IMPRESAS_ADMIN = {
+      'Facultad de Salud':['Bioquímica','Enfermería','Kinesiología y Fisioterapia','Medicina','Nutrición'],
+      'Facultad de Gestión':['Administración de Empresas','Comercio Internacional','Contaduría Pública','Ingeniería Comercial','Marketing','Psicología Organizacional','Relaciones Internacionales y Negocios Globales'],
+      'Facultad de Ingeniería':['Ingeniería Electrónica','Ingeniería Industrial','Ingeniería en Informática','Ingeniería en Sistemas'],
+      'Facultad de C. Jurídicas y Sociales':['Ciencias Políticas','Derecho'],
+      'FEADYS':['Adm. de Empresas/Pública','Adm. Gestión Emprendedora','Banca y Finanzas','Ciencias de la Educación','Comunicación y Publicidad','Economía','Economía y Finanzas','Economía y Negocios Internacionales','Gestión de Talento Humano','Ingeniería en Logística Global','Inteligencia Artificial y Robótica','Marketing Digital','Relaciones Internacionales','Sistemas']
+    };
+    function abrirTabCatalogosImpresos(btn) {
+      navegarPestana('tab-catalogos-impresos',btn);
+      const fac=document.getElementById('imp-facultad');
+      if(fac && !fac.options.length){
+        Object.keys(CARRERAS_IMPRESAS_ADMIN).forEach(f=>fac.add(new Option(f,f)));
+        actualizarCarrerasImpresasAdmin();
+      }
+      if (!unsubscribeCatalogosImpresos && db) {
+        unsubscribeCatalogosImpresos=db.collection('catalogos_impresos').onSnapshot(snap=>{
+          catalogosImpresosAdmin=snap.docs.map(doc=>({_id:doc.id,...doc.data()}));
+          renderCatalogosImpresosAdmin();
+          document.getElementById('imp-estado').textContent='Catálogos sincronizados: '+catalogosImpresosAdmin.length;
+        },err=>{
+          document.getElementById('imp-estado').textContent='Error al consultar la colección. Verificá las reglas de Firestore: '+err.message;
+        });
+      }
+    }
+    function actualizarCarrerasImpresasAdmin(seleccion) {
+      const fac=document.getElementById('imp-facultad')?.value;
+      const sel=document.getElementById('imp-carrera');if(!sel)return;
+      sel.replaceChildren();
+      (CARRERAS_IMPRESAS_ADMIN[fac]||[]).forEach(c=>sel.add(new Option(c,c)));
+      if(seleccion)sel.value=seleccion;
+    }
+    function esUrlDriveImpreso(url) {
+      try {const u=new URL(url);return u.protocol==='https:' && ['drive.google.com','docs.google.com'].includes(u.hostname);}catch(_){return false;}
+    }
+    function limpiarCatalogoImpresoAdmin() {
+      const f=document.getElementById('form-catalogo-impreso');if(!f)return;
+      f.reset();document.getElementById('imp-id').value='';
+      document.getElementById('imp-facultad').selectedIndex=0;actualizarCarrerasImpresasAdmin();
+      document.getElementById('imp-guardar').textContent='Guardar catálogo';
+    }
+    async function guardarCatalogoImpreso(e) {
+      e.preventDefault();
+      if (!db || !firebase.auth().currentUser || !ADMIN_UIDS.has(firebase.auth().currentUser.uid)) return alert('Se requiere sesión de administrador autorizado.');
+      const id=document.getElementById('imp-id').value;
+      const dato={
+        facultad:document.getElementById('imp-facultad').value,
+        carrera:document.getElementById('imp-carrera').value,
+        titulo:document.getElementById('imp-titulo').value.trim(),
+        link:document.getElementById('imp-link').value.trim(),
+        activo:document.getElementById('imp-activo').checked,
+        actualizado:firebase.firestore.FieldValue.serverTimestamp()
+      };
+      if(!CARRERAS_IMPRESAS_ADMIN[dato.facultad]?.includes(dato.carrera))return alert('Facultad y carrera no coinciden.');
+      if(!dato.titulo || !esUrlDriveImpreso(dato.link))return alert('Ingresá un nombre y un enlace válido de Google Drive.');
+      const boton=document.getElementById('imp-guardar');boton.disabled=true;
+      const estado=document.getElementById('imp-estado');estado.textContent='Guardando…';
+      try {
+        let ref;
+        if(id){ref=db.collection('catalogos_impresos').doc(id);await ref.update(dato);}
+        else{ref=await db.collection('catalogos_impresos').add(dato);}
+        await registrarAuditoria(id?'editar':'crear','catalogo_impreso',ref.id,dato.titulo,{facultad:dato.facultad,carrera:dato.carrera});
+        limpiarCatalogoImpresoAdmin();estado.textContent='Catálogo guardado correctamente.';
+      }catch(err){console.error(err);estado.textContent='No se pudo guardar: '+err.message;}
+      finally{boton.disabled=false;}
+    }
+    function editarCatalogoImpreso(id) {
+      const c=catalogosImpresosAdmin.find(x=>x._id===id);if(!c)return;
+      document.getElementById('imp-id').value=c._id;
+      document.getElementById('imp-facultad').value=c.facultad;
+      actualizarCarrerasImpresasAdmin(c.carrera);
+      document.getElementById('imp-titulo').value=c.titulo||'';
+      document.getElementById('imp-link').value=c.link||'';
+      document.getElementById('imp-activo').checked=c.activo!==false;
+      document.getElementById('imp-guardar').textContent='Guardar cambios';
+      document.getElementById('form-catalogo-impreso').scrollIntoView({behavior:'smooth'});
+    }
+    async function eliminarCatalogoImpreso(id) {
+      const c=catalogosImpresosAdmin.find(x=>x._id===id);if(!c||!confirm('¿Eliminar el catálogo "'+(c.titulo||'')+'" del listado? El archivo en Drive NO se borrará.'))return;
+      try{await db.collection('catalogos_impresos').doc(id).delete();await registrarAuditoria('eliminar','catalogo_impreso',id,c.titulo,{facultad:c.facultad,carrera:c.carrera});}
+      catch(err){alert('No se pudo eliminar: '+err.message);}
+    }
+    function renderCatalogosImpresosAdmin() {
+      const lista=document.getElementById('imp-listado');if(!lista)return;
+      lista.replaceChildren();
+      if(!catalogosImpresosAdmin.length){lista.textContent='Todavía no hay catálogos impresos registrados.';return;}
+      catalogosImpresosAdmin.slice().sort((a,b)=>(a.facultad+a.carrera+a.titulo).localeCompare(b.facultad+b.carrera+b.titulo,'es')).forEach(c=>{
+        const fila=document.createElement('div');fila.className='p-3 border border-slate-200 dark:border-slate-700 rounded-xl flex flex-wrap items-center justify-between gap-3';
+        const info=document.createElement('div');info.className='min-w-0 flex-1';
+        const title=document.createElement('strong');title.textContent=c.titulo||'Sin título';info.append(title);
+        const meta=document.createElement('p');meta.className='text-slate-500 mt-1';meta.textContent=(c.facultad||'')+' · '+(c.carrera||'')+(c.activo===false?' · Oculto':' · Visible');info.append(meta);
+        const acciones=document.createElement('div');acciones.className='flex gap-2 flex-wrap';
+        const a=document.createElement('a');a.textContent='Abrir';a.href=esUrlDriveImpreso(c.link)?c.link:'#';a.target='_blank';a.rel='noopener noreferrer';a.className='p-2 bg-blue-50 text-blue-700 rounded-lg';acciones.append(a);
+        const edit=document.createElement('button');edit.textContent='Editar';edit.className='p-2 bg-slate-200 dark:bg-slate-700 rounded-lg';edit.onclick=()=>editarCatalogoImpreso(c._id);acciones.append(edit);
+        const del=document.createElement('button');del.textContent='Eliminar';del.className='p-2 bg-rose-50 text-rose-700 rounded-lg';del.onclick=()=>eliminarCatalogoImpreso(c._id);acciones.append(del);
+        fila.append(info,acciones);lista.append(fila);
+      });
     }
 
     async function guardarLibro(e) {
