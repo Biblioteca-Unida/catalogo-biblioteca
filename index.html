@@ -154,6 +154,22 @@
         @media (max-width: 640px) { .form-grid-descarga { grid-template-columns: 1fr; } .campo-descarga.full { grid-column: auto; } .modal-descarga-body, .modal-descarga-header { padding-left: 18px; padding-right: 18px; } .acciones-descarga { flex-direction: column-reverse; } .btn-cancelar-descarga, .btn-confirmar-descarga { width: 100%; } }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Catálogos de la colección impresa administrados desde Firebase */
+        .catalogo-impreso-intro { background:#fff; padding:22px 26px; border-radius:14px; margin-bottom:24px; }
+        .catalogo-impreso-intro h2 { margin:0 0 7px; color:#1e3c6e; }
+        .catalogo-impreso-intro p { margin:0; color:#64748b; }
+        .catalogo-impreso-card { background:#fff; border-radius:14px; padding:22px; box-shadow:0 6px 18px rgba(0,0,0,.08); border-top:5px solid #2980b9; min-width:0; }
+        .catalogo-impreso-card h3 { margin:0 0 14px; color:#1e3c6e; font-size:1.25rem; }
+        .catalogo-impreso-carrera { border-top:1px solid #e2e8f0; padding:12px 0; }
+        .catalogo-impreso-carrera strong { display:block; color:#334155; margin-bottom:7px; }
+        .catalogo-impreso-link { display:flex; justify-content:space-between; gap:12px; align-items:center; margin:6px 0; background:#eff6ff; color:#1e3c6e; padding:10px 12px; border-radius:8px; text-decoration:none; font-size:.82rem; overflow-wrap:anywhere; }
+        .catalogo-impreso-link:hover { background:#dbeafe; }
+        .catalogos-impresos-antiguos { margin-top:28px; background:#fff; border-radius:12px; padding:15px 20px; }
+        .catalogos-impresos-antiguos summary { cursor:pointer; color:#1e3c6e; font-weight:600; }
+        .catalogos-impresos-enlaces { display:flex; flex-wrap:wrap; gap:9px; margin-top:12px; }
+        .catalogo-impreso-legacy { padding:8px 11px; border-radius:7px; background:#e0f2fe; color:#1e3c6e; text-decoration:none; font-size:.8rem; }
+        @media(max-width:768px){#catalogos-impresos-grid{grid-template-columns:1fr}.catalogo-impreso-card{padding:16px}}
     </style>
 </head>
 <body>
@@ -211,6 +227,7 @@
             <div class="overlay">
                 <h2>Facultad de Salud</h2>
                 <ul class="carreras-list">
+                    <li onclick="abrirCatalogo('Bioquímica')">Bioquímica</li>
                     <li onclick="abrirCatalogo('Enfermería')">Enfermería</li>
                     <li onclick="abrirCatalogo('Kinesiología y Fisioterapia')">Kinesiología y Fisioterapia</li>
                     <li onclick="abrirCatalogo('Medicina')">Medicina</li>
@@ -352,43 +369,17 @@
 </div>
 
 <div id="facultades-impresa-section" class="container">
-    <div class="facultades-grid">
-        <div class="facultad-card" style="cursor: default;">
-            <img src="https://www.unida.edu.py/v4/wp-content/uploads/elementor/thumbs/enfermeria_unida-ql44yi55fcezki8uwy991c9ar3btk20dbmt7sg6ztc.webp" alt="Facultad de Salud">
-            <div class="overlay">
-                <h2 style="margin-bottom: 15px;">Facultad de Salud</h2>
-                <div style="display: flex; flex-direction: column; gap: 10px; width: 80%; max-width: 250px; z-index: 10;">
-                    <a href="https://drive.google.com/uc?export=download&id=1npxD5HavcDHiSa8FAyAfR43eGvtM1eZo" target="_blank" style="color: white; text-decoration: none; background: #2980b9; padding: 8px 15px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; text-transform: uppercase; text-align: center; transition: background 0.3s;">Enfermería</a>
-                    <a href="https://drive.google.com/uc?export=download&id=1oh2rb7Xra-ozFVoZB_fzCmSpJjhpBrKx" target="_blank" style="color: white; text-decoration: none; background: #2980b9; padding: 8px 15px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; text-transform: uppercase; text-align: center; transition: background 0.3s;">Medicina</a>
-                    <a href="https://drive.google.com/uc?export=download&id=15DE4MTKmr59IGKd1fUvFn1TCj8lyPIXK" target="_blank" style="color: white; text-decoration: none; background: #2980b9; padding: 8px 15px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; text-transform: uppercase; text-align: center; transition: background 0.3s;">Nutrición</a>
-                </div>
-            </div>
-        </div>
-        <div class="facultad-card" onclick="window.open('https://drive.google.com/uc?export=download&id=12hFEbrxRfEsZiv1gvz7A9aU6CXzrdLog', '_blank')">
-            <img src="https://www.unida.edu.py/v4/wp-content/uploads/elementor/thumbs/economia-ql474wuhitr21icq2cdwj1yin6v2n4ab3pwbydxqs0.webp" alt="Facultad de Gestión">
-            <div class="overlay">
-                <h2 style="text-align: center; width: 100%;">Facultad de Gestión</h2>
-            </div>
-        </div>
-        <div class="facultad-card" onclick="window.open('https://drive.google.com/uc?export=download&id=1Jj3B2piVFqzsoi8tsl9dMZQFVPNePJnF', '_blank')">
-            <img src="https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&w=800&q=80" alt="Facultad de Ingeniería">
-            <div class="overlay">
-                <h2>Facultad de Ingeniería</h2>
-            </div>
-        </div>
-        <div class="facultad-card" onclick="window.open('https://drive.google.com/uc?export=download&id=197EBsdVvNtxfUaca-o_GYWlSMT-6ijl1', '_blank')">
-            <img src="https://images.unsplash.com/photo-1505664194779-8beaceb93744?auto=format&fit=crop&w=800&q=80" alt="C. Jurídicas y Sociales">
-            <div class="overlay">
-                <h2>Facultad de C. JURÍDICAS Y SOCIALES</h2>
-            </div>
-        </div>
-        <div class="facultad-card" onclick="window.open('URL_PDF_FEADYS', '_blank')">
-            <img src="https://www.unida.edu.py/v4/wp-content/uploads/elementor/thumbs/st_403991497-qfymca815zkjkmjzj5zfgkhhp3a2fdpawj6koah7m8.png" alt="FEADYS">
-            <div class="overlay">
-                <h2>FEADYS</h2>
-            </div>
-        </div>
+    <div class="catalogo-impreso-intro">
+        <h2><i class="fas fa-book"></i> Biblioteca Impresa</h2>
+        <p>Consultá los catálogos de nuestra colección física. Seleccioná tu facultad y carrera para abrir el archivo PDF o PowerPoint en Google Drive.</p>
     </div>
+    <div id="catalogos-impresos-estado" class="mensaje" role="status">Cargando catálogos impresos…</div>
+    <div id="catalogos-impresos-grid" class="facultades-grid"></div>
+    <details class="catalogos-impresos-antiguos">
+        <summary>Catálogos anteriores / enlaces generales</summary>
+        <div class="catalogos-impresos-enlaces"><a href="https://drive.google.com/uc?export=download&id=1npxD5HavcDHiSa8FAyAfR43eGvtM1eZo" target="_blank" rel="noopener noreferrer" class="catalogo-impreso-legacy">Salud: Enfermería</a><a href="https://drive.google.com/uc?export=download&id=1oh2rb7Xra-ozFVoZB_fzCmSpJjhpBrKx" target="_blank" rel="noopener noreferrer" class="catalogo-impreso-legacy">Salud: Medicina</a><a href="https://drive.google.com/uc?export=download&id=15DE4MTKmr59IGKd1fUvFn1TCj8lyPIXK" target="_blank" rel="noopener noreferrer" class="catalogo-impreso-legacy">Salud: Nutrición</a><a href="https://drive.google.com/uc?export=download&id=12hFEbrxRfEsZiv1gvz7A9aU6CXzrdLog" target="_blank" rel="noopener noreferrer" class="catalogo-impreso-legacy">Gestión (general)</a><a href="https://drive.google.com/uc?export=download&id=1Jj3B2piVFqzsoi8tsl9dMZQFVPNePJnF" target="_blank" rel="noopener noreferrer" class="catalogo-impreso-legacy">Ingeniería (general)</a><a href="https://drive.google.com/uc?export=download&id=197EBsdVvNtxfUaca-o_GYWlSMT-6ijl1" target="_blank" rel="noopener noreferrer" class="catalogo-impreso-legacy">C. Jurídicas y Sociales (general)</a></div>
+        <p>Los enlaces anteriores se conservan durante la migración. El catálogo de FEADYS todavía no tiene un enlace general válido.</p>
+    </details>
 </div>
 
 <div id="descarga-section" class="container">
@@ -551,6 +542,8 @@
     };
     
     let db = null;
+    let catalogosImpresos = [];
+    let catalogosImpresosListos = false;
     window.catalogoLibros = [];
     window.simuladoresGlobales = [];
 
@@ -626,6 +619,7 @@
         try {
             if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
             db = firebase.firestore();
+            inicializarCatalogosImpresos();
 
             // Firestore sincroniza en segundo plano: el catálogo ya está utilizable.
             db.collection("libros").onSnapshot(snapshot => {
@@ -695,6 +689,63 @@
         }
     }
 
+
+    const ORDEN_FACULTADES_IMPRESAS = [
+        'Facultad de Salud','Facultad de Gestión','Facultad de Ingeniería',
+        'Facultad de C. Jurídicas y Sociales','FEADYS'
+    ];
+    const CARRERAS_IMPRESAS = {
+      'Facultad de Salud': ['Bioquímica','Enfermería','Kinesiología y Fisioterapia','Medicina','Nutrición'],
+      'Facultad de Gestión': ['Administración de Empresas','Comercio Internacional','Contaduría Pública','Ingeniería Comercial','Marketing','Psicología Organizacional','Relaciones Internacionales y Negocios Globales'],
+      'Facultad de Ingeniería': ['Ingeniería Electrónica','Ingeniería Industrial','Ingeniería en Informática','Ingeniería en Sistemas'],
+      'Facultad de C. Jurídicas y Sociales': ['Ciencias Políticas','Derecho'],
+      'FEADYS': ['Adm. de Empresas/Pública','Adm. Gestión Emprendedora','Banca y Finanzas','Ciencias de la Educación','Comunicación y Publicidad','Economía','Economía y Finanzas','Economía y Negocios Internacionales','Gestión de Talento Humano','Ingeniería en Logística Global','Inteligencia Artificial y Robótica','Marketing Digital','Relaciones Internacionales','Sistemas']
+    };
+    function inicializarCatalogosImpresos() {
+        if (!db || window._catalogosImpresosSub) return;
+        window._catalogosImpresosSub = db.collection('catalogos_impresos').onSnapshot(snap => {
+            catalogosImpresos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            catalogosImpresosListos = true;
+            renderizarCatalogosImpresos();
+        }, error => {
+            console.warn('[UNIDA] No se pudieron leer catálogos impresos:', error);
+            const estado = document.getElementById('catalogos-impresos-estado');
+            if (estado) estado.textContent = 'No se pudieron cargar los catálogos nuevos. Revisá los permisos de Firestore; los enlaces anteriores siguen disponibles abajo.';
+        });
+    }
+    function enlaceDriveValidoImpreso(url) {
+        try {const u=new URL(url);return u.protocol==='https:' && ['drive.google.com','docs.google.com'].includes(u.hostname);}catch(_){return false;}
+    }
+    function renderizarCatalogosImpresos() {
+        const grid = document.getElementById('catalogos-impresos-grid');
+        const estado = document.getElementById('catalogos-impresos-estado');
+        if (!grid || !estado) return;
+        grid.replaceChildren();
+        const visibles = catalogosImpresos.filter(c => c.activo!==false && enlaceDriveValidoImpreso(c.link));
+        estado.textContent = !catalogosImpresosListos ? 'Cargando catálogos…' :
+          (visibles.length ? `${visibles.length} catálogo(s) disponible(s) por facultad y carrera.` : 'Todavía no se cargaron catálogos por carrera. Podés consultar los enlaces anteriores más abajo.');
+        for (const facultad of ORDEN_FACULTADES_IMPRESAS) {
+            const card=document.createElement('div'); card.className='catalogo-impreso-card';
+            const titulo=document.createElement('h3'); titulo.textContent=facultad; card.append(titulo);
+            const carreras = new Set([...(CARRERAS_IMPRESAS[facultad]||[]),...visibles.filter(c=>c.facultad===facultad).map(c=>c.carrera)]);
+            let disponibles=0;
+            for(const carrera of [...carreras].sort((a,b)=>a.localeCompare(b,'es'))){
+                const docs=visibles.filter(c=>c.facultad===facultad && c.carrera===carrera);
+                if(!docs.length)continue;
+                disponibles++;
+                const item=document.createElement('div');item.className='catalogo-impreso-carrera';
+                const subt=document.createElement('strong');subt.textContent=carrera;item.append(subt);
+                docs.sort((a,b)=>(a.titulo||'').localeCompare(b.titulo||'','es')).forEach(c=>{
+                    const a=document.createElement('a');a.className='catalogo-impreso-link';
+                    a.href=c.link;a.target='_blank';a.rel='noopener noreferrer';
+                    a.textContent=(c.titulo || 'Consultar catálogo')+' ↗';item.append(a);
+                });card.append(item);
+            }
+            if(!disponibles){const p=document.createElement('p');p.className='mensaje';p.textContent='Catálogos por carrera próximamente.';card.append(p);}
+            grid.append(card);
+        }
+    }
+
     function showSection(sectionId) {
         document.getElementById('dashboard-section').style.display = 'none';
         document.getElementById('facultades-digital-section').style.display = 'none';
@@ -703,6 +754,7 @@
         document.getElementById('catalogo-section').style.display = 'none';
         document.getElementById('simuladores-section').style.display = 'none';
 
+        if (sectionId === 'facultades-impresa') renderizarCatalogosImpresos();
         const target = document.getElementById(sectionId + '-section');
         if (target) target.style.display = 'block';
         window.scrollTo({ top: 0, behavior: 'smooth' });
