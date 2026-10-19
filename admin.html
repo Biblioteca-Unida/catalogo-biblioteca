@@ -254,6 +254,29 @@
 
         <!-- PESTAÑA 2: GESTIÓN DE LIBROS -->
         <section id="tab-libros" class="tab-content space-y-8 hidden">
+<!-- IMPORTACIÓN BIOQUÍMICA: NO ESCRIBE HASTA CONFIRMACIÓN EXPLÍCITA -->
+<section id="bio-importacion" class="bg-white dark:bg-slate-900 p-7 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+  <div>
+    <h3 class="font-bold text-base text-[#1e3c6e] dark:text-blue-300"><i class="fas fa-file-import mr-2"></i>Importación de Bioquímica (prueba controlada)</h3>
+    <p class="text-xs text-slate-500 mt-2">Seleccioná el CSV final de 418 registros. Primero se realiza una vista previa y una consulta actualizada a Firestore. No se reemplazan libros existentes.</p>
+  </div>
+  <input id="bio-csv" type="file" accept=".csv,text/csv" class="block w-full text-xs p-3 rounded-xl border border-slate-300 dark:border-slate-700" onchange="bioLeerCSV(this)">
+  <div class="flex flex-wrap gap-3">
+    <button type="button" onclick="bioPrevisualizar()" class="px-4 py-2 rounded-xl bg-blue-700 text-white text-xs font-semibold"><i class="fas fa-magnifying-glass mr-1"></i>Analizar duplicados y previsualizar</button>
+    <button type="button" onclick="descargarBackupCompleto()" class="px-4 py-2 rounded-xl bg-slate-700 text-white text-xs font-semibold"><i class="fas fa-shield-halved mr-1"></i>Descargar backup antes de importar</button>
+  </div>
+  <div id="bio-estado" role="status" aria-live="polite" class="text-xs text-slate-600 dark:text-slate-300">Esperando el CSV.</div>
+  <div id="bio-preview" class="hidden overflow-x-auto max-h-80 custom-scroll"></div>
+  <div id="bio-confirmacion" class="hidden space-y-3 border-t border-slate-200 dark:border-slate-700 pt-4">
+    <label class="text-xs flex items-start gap-2"><input type="checkbox" id="bio-backup-ok"> Confirmo que descargué y conservé un backup completo de Firestore antes de importar.</label>
+    <label class="text-xs block">Escribí <b>IMPORTAR</b> para habilitar la carga:
+      <input id="bio-frase" autocomplete="off" placeholder="IMPORTAR" class="mt-1 block w-full max-w-xs p-2 border rounded-lg bg-white text-slate-900 dark:bg-slate-800 dark:text-white dark:border-slate-600">
+    </label>
+    <button id="bio-importar" type="button" onclick="bioImportar()" class="px-5 py-3 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold">Confirmar carga SOLO de libros nuevos</button>
+    <p class="text-xs text-slate-500">No interrumpas la página durante la importación. Se crean documentos nuevos por lotes pequeños. Los fallos se pueden reintentar: el sistema vuelve a comprobar duplicados.</p>
+  </div>
+</section>
+
           <div class="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
             <div class="flex items-center justify-between pb-6 border-b border-slate-100 dark:border-slate-800 mb-6">
               <div>
@@ -2655,5 +2678,121 @@
       mostrarLogin('No se pudo inicializar Firebase. Revisa la configuración del proyecto.');
     }
   </script>
+
+<script>
+// Módulo aislado: sólo escribe al pulsar confirmación y tras autorización vigente.
+let bioArchivoFilas = null, bioPlan = null, bioEnProceso = false;
+function bioEstado(msg, error=false) {
+  const el=document.getElementById('bio-estado'); if(!el)return;
+  el.textContent=msg; el.className='text-xs '+(error?'text-rose-600':'text-slate-600 dark:text-slate-300');
+}
+function bioCSV(texto) {
+  const filas=[]; let fila=[],campo='',enComillas=false;
+  texto=texto.replace(/^\uFEFF/,'');
+  for(let i=0;i<texto.length;i++) {
+    const c=texto[i];
+    if(c==='"') { if(enComillas&&texto[i+1]==='"'){campo+='"';i++;} else enComillas=!enComillas; }
+    else if(c===','&&!enComillas){fila.push(campo);campo='';}
+    else if((c==='\n'||c==='\r')&&!enComillas){ if(c==='\r'&&texto[i+1]==='\n')i++;fila.push(campo);if(fila.some(x=>x.trim()))filas.push(fila);fila=[];campo='';}
+    else campo+=c;
+  }
+  if(enComillas)throw Error('El CSV contiene comillas sin cerrar.');
+  if(campo||fila.length){fila.push(campo);filas.push(fila);}
+  const nombres=filas.shift().map(x=>x.trim());
+  const columnas=['carrera','materia','titulo','nombre_archivo','origen_id','url_publica'];
+  for(const c of columnas)if(!nombres.includes(c))throw Error('Falta columna: '+c);
+  return filas.map((valores,i)=>{if(valores.length!==nombres.length)throw Error('Número de columnas incorrecto en registro '+(i+2));return Object.fromEntries(nombres.map((k,j)=>[k,(valores[j]||'').trim()]));});
+}
+function bioClave(v) {return String(v||'').replace(/<[^>]*>/g,' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();}
+function bioValidarFilas(filas) {
+  if(!filas.length)throw Error('CSV vacío.');
+  const ids=new Set();
+  filas.forEach((r,i)=>{
+    if(r.carrera!=='Bioquímica'||!r.titulo||!r.origen_id||!r.materia)throw Error('Registro '+(i+2)+': faltan datos o la carrera no es Bioquímica.');
+    if(ids.has(r.origen_id))throw Error('ID de OneDrive repetido en CSV: '+r.origen_id);
+    ids.add(r.origen_id);
+    try {const u=new URL(r.url_publica);if(u.protocol!=='https:'||!u.hostname.endsWith('.sharepoint.com'))throw Error();}
+    catch {throw Error('URL inválida en registro '+(i+2));}
+  });
+}
+async function bioLeerCSV(input) {
+  bioPlan=null;bioArchivoFilas=null;
+  document.getElementById('bio-confirmacion').classList.add('hidden');
+  document.getElementById('bio-preview').classList.add('hidden');
+  const f=input.files?.[0];if(!f)return;
+  try {const filas=bioCSV(await f.text());bioValidarFilas(filas);bioArchivoFilas=filas;bioEstado('CSV validado: '+filas.length+' filas. Pulsá «Analizar duplicados».');}
+  catch(e){bioEstado('Error: '+e.message,true);}
+}
+async function bioPrepararPlan() {
+  if(!bioArchivoFilas)throw Error('Primero seleccioná un CSV válido.');
+  if(typeof db==='undefined'||!db)throw Error('Firestore no está conectado.');
+  if(!firebase.auth().currentUser||typeof ADMIN_UIDS==='undefined'||!ADMIN_UIDS.has(firebase.auth().currentUser.uid))throw Error('Iniciá sesión con una cuenta administradora autorizada.');
+  const snap=await db.collection('libros').get();
+  const existenteIds=new Set(), existenteUrls=new Set(), existenteTitulos=new Set(), docs=new Set();
+  snap.forEach(d=>{const a=d.data();docs.add(d.id);if(a.origenId)existenteIds.add(a.origenId);if(a.link)existenteUrls.add(a.link.trim());if(a.carrera==='Bioquímica')existenteTitulos.add(bioClave(a.titulo));});
+  const nuevos=[],omitidos=[];const idsNuevos=new Set(),urlsNuevas=new Set(),titulosNuevos=new Set();
+  for(const r of bioArchivoFilas){
+    const titulo=bioClave(r.titulo),id=r.origen_id,url=r.url_publica;
+    const docId='bioquimica_'+id;
+    if(existenteIds.has(id)||existenteUrls.has(url)||existenteTitulos.has(titulo)||docs.has(docId)||idsNuevos.has(id)||urlsNuevas.has(url)||titulosNuevos.has(titulo)) omitidos.push(r);
+    else {nuevos.push(r);idsNuevos.add(id);urlsNuevas.add(url);titulosNuevos.add(titulo);}
+  }
+  return {nuevos,omitidos,total:bioArchivoFilas.length,baseActual:snap.size};
+}
+async function bioPrevisualizar() {
+  if(bioEnProceso)return;
+  document.getElementById('bio-confirmacion').classList.add('hidden');
+  bioPlan=null;
+  try{
+    bioEstado('Consultando Firestore y buscando duplicados...');
+    const plan=await bioPrepararPlan();bioPlan=plan;
+    bioEstado(`CSV: ${plan.total} | Nuevos para importar: ${plan.nuevos.length} | Ya existentes o posibles duplicados: ${plan.omitidos.length} | Documentos actuales: ${plan.baseActual}.`);
+    const box=document.getElementById('bio-preview');box.classList.remove('hidden');
+    const tabla=document.createElement('table');tabla.className='w-full text-xs';
+    const cab=document.createElement('tr');for(const h of ['Título','Materia','Autor','Acción']){const th=document.createElement('th');th.textContent=h;th.className='text-left p-2 border-b';cab.append(th);}tabla.append(cab);
+    for(const [i,r] of [...plan.nuevos.slice(0,12),...plan.omitidos.slice(0,5)].entries()){
+      const tr=document.createElement('tr');const valores=[r.titulo,r.materia,'S/A',i<Math.min(12,plan.nuevos.length)?'Nuevo':'Omitido'];
+      for(const v of valores){const td=document.createElement('td');td.textContent=v;td.className='p-2 border-b';tr.append(td);}tabla.append(tr);
+    }
+    box.replaceChildren(tabla);
+    if(plan.nuevos.length)document.getElementById('bio-confirmacion').classList.remove('hidden');
+  }catch(e){bioEstado('No se pudo analizar: '+e.message,true);}
+}
+async function bioImportar(){
+  if(bioEnProceso)return;
+  if(!bioPlan||!bioPlan.nuevos.length){bioEstado('Analizá el archivo primero.',true);return;}
+  if(!document.getElementById('bio-backup-ok').checked||document.getElementById('bio-frase').value.trim()!=='IMPORTAR'){
+    bioEstado('Antes de importar, descargá el backup, marcá la casilla y escribí IMPORTAR.',true);return;
+  }
+  if(!confirm('¿Confirmás importar los libros NUEVOS de Bioquímica a Firestore? No se modificarán los existentes.'))return;
+  bioEnProceso=true;const boton=document.getElementById('bio-importar');boton.disabled=true;
+  let escritos=0;
+  try{
+    // Segunda comprobación de Firestore justo antes de escribir.
+    const actual=await bioPrepararPlan();
+    if(actual.nuevos.length!==bioPlan.nuevos.length)throw Error('La base cambió desde la vista previa. Volvé a analizar antes de importar.');
+    const col=db.collection('libros');
+    const portada=PORTADAS_PRESET['Bioquímica'];
+    if(!portada)throw Error('No se encontró la portada predeterminada de Bioquímica.');
+    for(let inicio=0;inicio<actual.nuevos.length;inicio+=80){
+      const grupo=actual.nuevos.slice(inicio,inicio+80);const batch=db.batch();
+      grupo.forEach(r=>{
+        const doc=col.doc('bioquimica_'+r.origen_id);
+        batch.set(doc,{
+          carrera:'Bioquímica',titulo:r.titulo,autor:'S/A',imagen:portada,
+          link:r.url_publica,materia:r.materia,origenId:r.origen_id,
+          nombreArchivo:r.nombre_archivo,estadoPortada:'pendiente',
+          origenImportacion:'Bioquimica OneDrive',fechaImportacion:firebase.firestore.FieldValue.serverTimestamp()
+        });
+      });
+      await batch.commit();escritos+=grupo.length;bioEstado('Guardados '+escritos+' de '+actual.nuevos.length+' registros nuevos...');
+    }
+    bioEstado('Importación completada: '+escritos+' libros nuevos. Omitidos: '+actual.omitidos.length+'. Revisa Auditoría del Catálogo > Portada genérica.');
+    document.getElementById('bio-confirmacion').classList.add('hidden');bioPlan=null;
+    if(typeof registrarAuditoria==='function')await registrarAuditoria('importar','libro','','Importación Bioquímica',{creados:escritos,omitidos:actual.omitidos.length});
+  }catch(e){bioEstado('Importación detenida después de '+escritos+' registros: '+e.message+' — Volvé a analizar para reintentar sólo pendientes.',true);}
+  finally {bioEnProceso=false;boton.disabled=false;}
+}
+</script>
 </body>
 </html>
