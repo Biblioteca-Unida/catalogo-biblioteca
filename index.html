@@ -609,21 +609,11 @@
 
     // --- CARGA INMEDIATA: CACHE/ARCHIVO ESTÁTICO PRIMERO, FIREBASE DESPUÉS ---
     function cargarDatosInmediatos() {
+        // El catálogo completo ya supera la cuota de localStorage en algunos equipos.
+        // Se usa catalogo.js como respaldo inmediato y Firestore como fuente actualizada.
+        // Eliminamos solamente el caché obsoleto del catálogo; no tocamos datos de usuario.
         let origenCatalogo = 'vacío';
-
-        try {
-            const cache = localStorage.getItem(CATALOGO_CACHE_KEY);
-            if (cache) {
-                const datos = JSON.parse(cache);
-                if (Array.isArray(datos) && datos.length) {
-                    window.catalogoLibros = datos;
-                    origenCatalogo = 'cache local';
-                }
-            }
-        } catch (error) {
-            console.warn('[UNIDA] Cache local del catálogo inválida:', error);
-            try { localStorage.removeItem(CATALOGO_CACHE_KEY); } catch (_) {}
-        }
+        try { localStorage.removeItem(CATALOGO_CACHE_KEY); } catch (_) {}
 
         if (!window.catalogoLibros.length && typeof catalogoLibros !== 'undefined' && Array.isArray(catalogoLibros)) {
             window.catalogoLibros = [...catalogoLibros];
@@ -666,7 +656,8 @@
 
                 if (librosCloud.length > 0) {
                     window.catalogoLibros = librosCloud;
-                    guardarCacheSeguro(CATALOGO_CACHE_KEY, librosCloud);
+                    // Evitar almacenar miles de registros (y posibles imágenes base64) en localStorage.
+                    // La fuente vigente es Firestore, con catalogo.js como respaldo.
                 } else if (!window.catalogoLibros.length && typeof catalogoLibros !== 'undefined' && Array.isArray(catalogoLibros)) {
                     window.catalogoLibros = [...catalogoLibros];
                 }
@@ -705,11 +696,6 @@
 
     function usarRespaldoLocal() {
         if (!window.catalogoLibros.length) {
-            try {
-                const localData = localStorage.getItem(CATALOGO_CACHE_KEY);
-                if (localData) window.catalogoLibros = JSON.parse(localData);
-            } catch (_) {}
-
             if (!window.catalogoLibros.length && typeof catalogoLibros !== 'undefined' && Array.isArray(catalogoLibros)) {
                 window.catalogoLibros = [...catalogoLibros];
             }
