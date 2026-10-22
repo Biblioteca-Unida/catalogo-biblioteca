@@ -916,7 +916,12 @@
     // --- REGISTRO DE DESCARGAS ---
     function abrirModalDescarga(libro) {
         libroPendienteDescarga = libro;
-        document.getElementById('descarga-libro-titulo').textContent = libro.titulo || 'Libro seleccionado';
+        // Los títulos antiguos pueden contener etiquetas HTML de edición.
+        // Extraemos únicamente el texto visible; jamás ejecutamos HTML desde Firestore.
+        const tituloBruto = String(libro.titulo || 'Libro seleccionado');
+        const tituloPlano = new DOMParser().parseFromString(tituloBruto, 'text/html').body.textContent
+            .replace(/\s+/g, ' ').trim();
+        document.getElementById('descarga-libro-titulo').textContent = tituloPlano || 'Libro seleccionado';
         document.getElementById('descarga-libro-autor').textContent = libro.autor ? `Autor: ${libro.autor}` : '';
         cargarDatosDescargaGuardados();
         actualizarCamposDescarga();
