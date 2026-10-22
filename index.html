@@ -381,7 +381,7 @@
                 <h2 style="margin-bottom: 15px;">Facultad de Salud</h2>
                 <div style="display: flex; flex-direction: column; gap: 10px; width: 80%; max-width: 250px; z-index: 10;">
                     <!-- Bioquímica: visible desde ahora, sin enlace inventado. Se oculta cuando el admin publica el catálogo. -->
-                    <span id="bioquimica-impresa-pendiente" aria-label="Bioquímica: catálogo impreso pendiente de publicación" style="color: white; background: #2980b9; padding: 8px 15px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; text-transform: uppercase; text-align: center; opacity: 0.78;">Bioquímica <small style="display:block; font-weight:400; font-size:0.7rem; text-transform:none;">Catálogo en preparación</small></span>
+                    <span id="bioquimica-impresa-pendiente" aria-label="Bioquímica: cargando enlace del catálogo" style="color: white; background: #2980b9; padding: 8px 15px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; text-transform: uppercase; text-align: center; opacity: 0.78;">Bioquímica</span>
                     <a href="https://drive.google.com/uc?export=download&id=1npxD5HavcDHiSa8FAyAfR43eGvtM1eZo" target="_blank" style="color: white; text-decoration: none; background: #2980b9; padding: 8px 15px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; text-transform: uppercase; text-align: center; transition: background 0.3s;">Enfermería</a>
                     <a href="https://drive.google.com/uc?export=download&id=1oh2rb7Xra-ozFVoZB_fzCmSpJjhpBrKx" target="_blank" style="color: white; text-decoration: none; background: #2980b9; padding: 8px 15px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; text-transform: uppercase; text-align: center; transition: background 0.3s;">Medicina</a>
                     <a href="https://drive.google.com/uc?export=download&id=15DE4MTKmr59IGKd1fUvFn1TCj8lyPIXK" target="_blank" style="color: white; text-decoration: none; background: #2980b9; padding: 8px 15px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; text-transform: uppercase; text-align: center; transition: background 0.3s;">Nutrición</a>
@@ -484,8 +484,9 @@
                     <div class="campo-descarga">
                         <label for="desc-apellidos">Apellidos *</label>
                         <input id="desc-apellidos" type="text" maxlength="120" autocomplete="family-name" placeholder="Ej: González Benítez" required>
-                        <span class="campo-ayuda">Ingrese sus dos apellidos.</span>
-                        <span id="error-apellidos" class="campo-error">Debe ingresar sus dos apellidos.</span>
+                        <label class="recordar-descarga" style="margin-top:2px"><input id="desc-un-apellido" type="checkbox" style="width:auto;flex-shrink:0"> Tengo un solo apellido</label>
+                        <span class="campo-ayuda" id="ayuda-apellidos">Ingrese sus dos apellidos, si los tiene.</span>
+                        <span id="error-apellidos" class="campo-error">Ingrese ambos apellidos o marque «Tengo un solo apellido».</span>
                     </div>
                     <div class="campo-descarga">
                         <label for="desc-correo">Correo electrónico *</label>
@@ -650,9 +651,14 @@
             inicializarCatalogosImpresos();
 
             // Firestore sincroniza en segundo plano: el catálogo ya está utilizable.
+            const librosPorId = new Map();
             db.collection("libros").onSnapshot(snapshot => {
-                const librosCloud = [];
-                snapshot.forEach(doc => librosCloud.push({ _id: doc.id, ...doc.data() }));
+                // Solo procesar los documentos que cambiaron desde la última sincronización.
+                snapshot.docChanges().forEach(change => {
+                    if (change.type === 'removed') librosPorId.delete(change.doc.id);
+                    else librosPorId.set(change.doc.id, { _id: change.doc.id, ...change.doc.data() });
+                });
+                const librosCloud = Array.from(librosPorId.values());
 
                 if (librosCloud.length > 0) {
                     window.catalogoLibros = librosCloud;
@@ -739,12 +745,18 @@
     function enlaceDriveValidoImpreso(url) {
         try {const u=new URL(url);return u.protocol==='https:' && ['drive.google.com','docs.google.com'].includes(u.hostname);}catch(_){return false;}
     }
+    function normalizarCarreraImpresa(valor) {
+        return String(valor || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+    }
     function renderizarCatalogosImpresos() {
         // Diseño original: las facultades y sus enlaces anteriores están siempre visibles.
         // Los enlaces nuevos de Firestore se añaden dentro de la facultad correspondiente.
         document.querySelectorAll('[data-catalogos-facultad]').forEach(contenedor => {
             contenedor.replaceChildren();
             const facultad = contenedor.dataset.catalogosFacultad;
+            if (facultad === 'Facultad de Salud') {
+                document.querySelectorAll('.bioquimica-impresa-dinamica').forEach(el => el.remove());
+            }
             const disponibles = catalogosImpresos.filter(c =>
                 c.activo !== false && c.facultad === facultad && enlaceDriveValidoImpreso(c.link)
             );
@@ -753,9 +765,30 @@
                 const avisoBioquimica = document.getElementById('bioquimica-impresa-pendiente');
                 if (avisoBioquimica) {
                     avisoBioquimica.style.display = disponibles.some(c =>
-                        String(c.carrera || '').trim().toLocaleLowerCase('es') === 'bioquímica'
+                        normalizarCarreraImpresa(c.carrera) === 'bioquimica'
                     ) ? 'none' : 'block';
                 }
+            }
+            if (facultad === 'Facultad de Salud') {
+                const filaBotones = document.getElementById('bioquimica-impresa-pendiente')?.parentElement;
+                const bio = disponibles.filter(c => normalizarCarreraImpresa(c.carrera) === 'bioquimica');
+                if (bio.length && filaBotones) {
+                    const c = bio[0];
+                    const enlace = document.createElement('a');
+                    enlace.href = c.link;
+                    enlace.target = '_blank';
+                    enlace.rel = 'noopener noreferrer';
+                    enlace.className = 'bioquimica-impresa-dinamica';
+                    enlace.textContent = 'Bioquímica';
+                    enlace.title = c.titulo || 'Catálogo impreso de Bioquímica';
+                    enlace.style.cssText = 'color:white;text-decoration:none;background:#2980b9;padding:8px 15px;border-radius:6px;font-weight:600;font-size:.9rem;text-transform:uppercase;text-align:center;transition:background .3s';
+                    enlace.addEventListener('click', e => e.stopPropagation());
+                    filaBotones.prepend(enlace);
+                }
+                // Solo el resto de catálogos complementarios va a la sección inferior.
+                const adicionales = disponibles.filter(c => String(c.carrera || '').trim().toLocaleLowerCase('es') !== 'bioquímica');
+                disponibles.length = 0;
+                disponibles.push(...adicionales);
             }
             if (!disponibles.length) return; // Conservar enlaces originales mientras no haya registros nuevos.
             const grupo = document.createElement('div');
@@ -921,12 +954,15 @@
         const raw = localStorage.getItem(DESCARGA_STORAGE_KEY);
         if (!raw) {
             document.getElementById('form-descarga').reset();
+            actualizarAyudaApellidos();
             return;
         }
         try {
             const d = JSON.parse(raw);
             document.getElementById('desc-nombres').value = d.nombres || '';
             document.getElementById('desc-apellidos').value = d.apellidos || '';
+            document.getElementById('desc-un-apellido').checked = d.unSoloApellido === true;
+            actualizarAyudaApellidos();
             document.getElementById('desc-correo').value = d.correo || '';
             document.getElementById('desc-ocupacion').value = d.ocupacion || '';
             document.getElementById('desc-matricula').value = d.matricula || '';
@@ -942,6 +978,13 @@
     function normalizarEspacios(valor) {
         return (valor || '').trim().replace(/\s+/g, ' ');
     }
+
+    function actualizarAyudaApellidos() {
+        const uno = document.getElementById('desc-un-apellido').checked;
+        document.getElementById('ayuda-apellidos').textContent = uno ? 'Ingrese su único apellido.' : 'Ingrese sus dos apellidos, si los tiene.';
+        document.getElementById('error-apellidos').style.display = 'none';
+    }
+    document.getElementById('desc-un-apellido').addEventListener('change', actualizarAyudaApellidos);
 
     function tieneDosApellidos(valor) {
         return normalizarEspacios(valor).split(' ').filter(Boolean).length >= 2;
@@ -961,7 +1004,8 @@
             form.reportValidity();
             return;
         }
-        if (!tieneDosApellidos(apellidosInput.value)) {
+        const unSoloApellido = document.getElementById('desc-un-apellido').checked;
+        if (!normalizarEspacios(apellidosInput.value) || (!unSoloApellido && !tieneDosApellidos(apellidosInput.value))) {
             errorApellidos.style.display = 'block';
             apellidosInput.focus();
             return;
@@ -975,6 +1019,7 @@
         const datosPersona = {
             nombres: normalizarEspacios(document.getElementById('desc-nombres').value),
             apellidos: normalizarEspacios(apellidosInput.value),
+            unSoloApellido,
             correo: normalizarEspacios(document.getElementById('desc-correo').value).toLowerCase(),
             ocupacion,
             matricula: ocupacion === 'Estudiante UNIDA' ? matricula : '',
