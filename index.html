@@ -89,9 +89,7 @@
         .catalogo-header h2 { font-family: "Cooper Black", serif; color: #1e3c6e; font-size: 2rem; margin: 0; text-transform: uppercase; }
         .btn-volver { background: #e74c3c; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold; font-family: 'Poppins', sans-serif; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 8px; }
         .btn-volver:hover { background: #c0392b; }
-        .search-controls { display: flex; gap: 15px; flex-grow: 1; max-width: 850px; flex-wrap: wrap; }
-        .search-scope-select { min-width: 175px; }
-        @media (max-width: 760px) { .search-controls { max-width: 100%; width: 100%; flex-direction: column; } .search-controls select, .search-controls input { width: 100%; box-sizing: border-box; } }
+        .search-controls { display: flex; gap: 15px; flex-grow: 1; max-width: 600px; }
         .search-bar { flex-grow: 1; padding: 12px 15px; border: 1px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 0.9rem; outline: none; transition: 0.3s; }
         .search-bar:focus { border-color: #2980b9; box-shadow: 0 0 5px rgba(41, 128, 185, 0.3); }
         .filter-select { padding: 12px 15px; border: 1px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 0.9rem; outline: none; background: white; cursor: pointer; }
@@ -334,14 +332,10 @@
             <h2 id="catalogo-titulo">Catálogo</h2>
         </div>
         <div class="search-controls">
-            <select id="filtro-libros" class="filter-select" aria-label="Buscar por">
+            <select id="filtro-libros" class="filter-select">
                 <option value="todos">Buscar por...</option>
                 <option value="autor">Autor</option>
                 <option value="tema">Tema (Título)</option>
-            </select>
-            <select id="alcance-busqueda-libros" class="filter-select search-scope-select" aria-label="Alcance de búsqueda">
-                <option value="carrera">Esta carrera</option>
-                <option value="facultad">Toda la facultad</option>
             </select>
             <input type="text" id="buscador-libros" class="search-bar" placeholder="Escribe aquí para buscar (sin importar acentos)...">
         </div>
@@ -614,75 +608,6 @@
         return ALIAS_CARRERAS[carrera] || [carrera];
     }
 
-    // Alcance de búsqueda por facultad. Los nombres se basan en las carreras
-    // que aparecen actualmente en la portada; no modifica los datos de Firestore.
-    const CARRERAS_POR_FACULTAD = {
-        "salud": ["Bioquímica", "Enfermería", "Kinesiología y Fisioterapia", "Medicina", "Nutrición"],
-        "gestion": ["Administración de Empresas", "Comercio Internacional", "Contaduría Pública", "Ingeniería Comercial", "Marketing y Gestión Comercial", "Relaciones Internacionales y Negocios Globales", "Psicología Organizacional"],
-        "ingenieria": ["Ingeniería Electrónica", "Ingeniería Industrial", "Ingeniería en Sistemas", "Ingeniería en Informática"],
-        "juridicas": ["Derecho", "Ciencias Políticas"],
-        "feadys": ["Adm. de Empresas/Pública", "Adm. Gestión Emprendedora", "Gestión de Talento Humano", "Banca y Finanzas", "Ciencias de la Educación", "Comunicación y Publicidad", "Economía", "Economía y Finanzas", "Economía y Negocios Internacionales", "Ingeniería en Logística Global", "Inteligencia Artificial y Robótica", "Marketing Digital", "Sistemas", "Relaciones Internacionales"]
-    };
-
-    function normalizarBusqueda(valor) {
-        return String(valor || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-    }
-
-    function claveFacultadDeCarrera(carrera) {
-        const buscada = normalizarBusqueda(carrera);
-        for (const [facultad, carreras] of Object.entries(CARRERAS_POR_FACULTAD)) {
-            const coincide = carreras.some(nombre => {
-                const variantes = carrerasEquivalentes(nombre);
-                return variantes.some(v => normalizarBusqueda(v) === buscada) || normalizarBusqueda(nombre) === buscada;
-            });
-            if (coincide) return facultad;
-        }
-        // Compatibilidad con nombres alternativos de la tarjeta de Gestión.
-        if (buscada === normalizarBusqueda('Marketing')) return 'gestion';
-        return null;
-    }
-
-    function carrerasDeFacultad(carrera) {
-        const clave = claveFacultadDeCarrera(carrera);
-        return clave ? CARRERAS_POR_FACULTAD[clave] : [];
-    }
-
-    function actualizarOpcionesAlcance(carrera) {
-        const selector = document.getElementById('alcance-busqueda-libros');
-        if (!selector) return;
-        const disponible = Boolean(carrerasDeFacultad(carrera).length);
-        const opcionFacultad = selector.querySelector('option[value="facultad"]');
-        opcionFacultad.disabled = !disponible;
-        if (!disponible) selector.value = 'carrera';
-    }
-
-    function claveDuplicadoLibro(libro) {
-        // Solo se agrupan duplicados con mismo título, autor y enlace exacto.
-        // No se fusionan títulos parecidos ni ediciones/tomos con enlaces distintos.
-        const enlace = String(libro.link || libro.enlace || '').trim().replace(/\/$/, '');
-        if (!enlace) return '';
-        return [normalizarBusqueda(libro.titulo), normalizarBusqueda(libro.autor), enlace].join('|||');
-    }
-
-    function agruparDuplicadosExactos(libros) {
-        const porClave = new Map();
-        const resultado = [];
-        libros.forEach(libro => {
-            const clave = claveDuplicadoLibro(libro);
-            if (!clave) { resultado.push({...libro}); return; }
-            if (!porClave.has(clave)) {
-                const copia = {...libro, _carrerasCoincidentes: [libro.carrera].filter(Boolean)};
-                porClave.set(clave, copia);
-                resultado.push(copia);
-            } else {
-                const existente = porClave.get(clave);
-                const carrera = String(libro.carrera || '').trim();
-                if (carrera && !existente._carrerasCoincidentes.includes(carrera)) existente._carrerasCoincidentes.push(carrera);
-            }
-        });
-        return resultado;
-    }
-
     // --- CARGA INMEDIATA: CACHE/ARCHIVO ESTÁTICO PRIMERO, FIREBASE DESPUÉS ---
     function cargarDatosInmediatos() {
         // El catálogo completo ya supera la cuota de localStorage en algunos equipos.
@@ -750,7 +675,7 @@
                     const carreraActual = tituloActual.replace('Catálogo - ', '');
                     const texto = document.getElementById('buscador-libros').value;
                     const filtro = document.getElementById('filtro-libros').value;
-                    mostrarLibros(tituloActual === 'Catálogo' ? null : carreraActual, texto, filtro, false, document.getElementById('alcance-busqueda-libros').value);
+                    mostrarLibros(tituloActual === 'Catálogo' ? null : carreraActual, texto, filtro, false);
                 }
             }, error => {
                 console.warn('[UNIDA] Firestore libros no disponible; se mantiene el catálogo inmediato.', error);
@@ -909,55 +834,32 @@
 
     function abrirCatalogo(carrera) {
         document.getElementById('catalogo-titulo').textContent = 'Catálogo - ' + carrera;
-        document.getElementById('buscador-libros').value = '';
-        document.getElementById('filtro-libros').value = 'todos';
-        document.getElementById('alcance-busqueda-libros').value = 'carrera';
-        actualizarOpcionesAlcance(carrera);
+        document.getElementById('buscador-libros').value = ''; // Limpiar buscador
         mostrarLibros(carrera);
         showSection('catalogo');
     }
 
     // --- FUNCIÓN CENTRAL DE FILTRADO Y PAGINACIÓN ---
-    function mostrarLibros(carreraFiltrada = null, textoBusqueda = '', filtroTipo = 'todos', resetPagina = true, alcanceBusqueda = 'carrera') {
+    function mostrarLibros(carreraFiltrada = null, textoBusqueda = '', filtroTipo = 'todos', resetPagina = true) {
         const mensajeVacio = document.getElementById('mensaje-vacio');
-        textoBusqueda = normalizarBusqueda(textoBusqueda);
+        
+        textoBusqueda = textoBusqueda.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
         let librosFiltrados = window.catalogoLibros || [];
-        const selectorAlcance = document.getElementById('alcance-busqueda-libros');
-        if (carreraFiltrada && selectorAlcance && alcanceBusqueda === 'carrera') alcanceBusqueda = selectorAlcance.value;
 
         if (carreraFiltrada) {
-            if (alcanceBusqueda === 'facultad') {
-                const carreras = carrerasDeFacultad(carreraFiltrada);
-                if (carreras.length) {
-                    const equivalentesNormalizados = new Set();
-                    carreras.forEach(nombre => carrerasEquivalentes(nombre).forEach(v => equivalentesNormalizados.add(normalizarBusqueda(v))));
-                    // También acepta el rótulo visible "Marketing" para registros con el nombre completo.
-                    if (normalizarBusqueda(carreraFiltrada) === normalizarBusqueda('Marketing')) equivalentesNormalizados.add(normalizarBusqueda('Marketing y Gestión Comercial'));
-                    librosFiltrados = librosFiltrados.filter(libro => equivalentesNormalizados.has(normalizarBusqueda(libro.carrera)));
-                } else {
-                    librosFiltrados = librosFiltrados.filter(libro => carrerasEquivalentes(carreraFiltrada).some(c => normalizarBusqueda(c) === normalizarBusqueda(libro.carrera)));
-                }
-            } else {
-                const equivalentes = carrerasEquivalentes(carreraFiltrada).map(normalizarBusqueda);
-                // Compatibilidad con el nombre corto que se muestra en la tarjeta de Marketing.
-                if (normalizarBusqueda(carreraFiltrada) === normalizarBusqueda('Marketing')) equivalentes.push(normalizarBusqueda('Marketing y Gestión Comercial'));
-                librosFiltrados = librosFiltrados.filter(libro => equivalentes.includes(normalizarBusqueda(libro.carrera)));
-            }
+            const equivalentes = carrerasEquivalentes(carreraFiltrada);
+            librosFiltrados = librosFiltrados.filter(libro => equivalentes.includes(libro.carrera));
         }
 
         if (textoBusqueda) {
             librosFiltrados = librosFiltrados.filter(libro => {
-                const titulo = normalizarBusqueda(libro.titulo);
-                const autor = normalizarBusqueda(libro.autor);
+                const titulo = (libro.titulo || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                const autor = (libro.autor || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
                 if (filtroTipo === 'autor') return autor.includes(textoBusqueda);
                 if (filtroTipo === 'tema') return titulo.includes(textoBusqueda);
                 return titulo.includes(textoBusqueda) || autor.includes(textoBusqueda);
             });
-        }
-
-        if (alcanceBusqueda === 'facultad' && carreraFiltrada && carrerasDeFacultad(carreraFiltrada).length) {
-            librosFiltrados = agruparDuplicadosExactos(librosFiltrados);
         }
 
         librosFiltradosGlobal = librosFiltrados;
@@ -1002,22 +904,6 @@
                     </button>
                 </div>
             `;
-            const carrerasCoincidentes = Array.isArray(libro._carrerasCoincidentes) ? libro._carrerasCoincidentes : [];
-            if (carrerasCoincidentes.length > 1) {
-                const origen = document.createElement('p');
-                origen.className = 'libro-author';
-                origen.style.fontSize = '0.82rem';
-                origen.style.marginTop = '2px';
-                origen.textContent = 'Disponible en: ' + carrerasCoincidentes.join(', ');
-                card.querySelector('.libro-info').appendChild(origen);
-            } else if (document.getElementById('alcance-busqueda-libros')?.value === 'facultad' && libro.carrera) {
-                const origen = document.createElement('p');
-                origen.className = 'libro-author';
-                origen.style.fontSize = '0.82rem';
-                origen.style.marginTop = '2px';
-                origen.textContent = 'Catálogo: ' + libro.carrera;
-                card.querySelector('.libro-info').appendChild(origen);
-            }
             const btnDescarga = card.querySelector('.btn-registro-descarga');
             if (btnDescarga) btnDescarga.addEventListener('click', () => abrirModalDescarga(libro));
             contenedor.appendChild(card);
@@ -1230,21 +1116,16 @@
     }
 
     // --- DEBOUNCE (RETRASO INTELIGENTE) EN BÚSQUEDA ---
-    function actualizarResultadosDesdeControles(resetPagina = true) {
-        const tituloActual = document.getElementById('catalogo-titulo').textContent;
-        const carreraActual = tituloActual.replace('Catálogo - ', '');
-        const texto = document.getElementById('buscador-libros').value;
-        const filtro = document.getElementById('filtro-libros').value;
-        const alcance = document.getElementById('alcance-busqueda-libros').value;
-        mostrarLibros(tituloActual === 'Catálogo' ? null : carreraActual, texto, filtro, resetPagina, alcance);
-    }
-
-    document.getElementById('buscador-libros').addEventListener('input', () => {
+    document.getElementById('buscador-libros').addEventListener('input', (e) => {
         clearTimeout(timeoutBusqueda);
-        timeoutBusqueda = setTimeout(() => actualizarResultadosDesdeControles(true), 300);
+        timeoutBusqueda = setTimeout(() => {
+            const texto = e.target.value;
+            const filtro = document.getElementById('filtro-libros').value;
+            const tituloActual = document.getElementById('catalogo-titulo').textContent;
+            const carreraActual = tituloActual.replace('Catálogo - ', '');
+            mostrarLibros(tituloActual === 'Catálogo' ? null : carreraActual, texto, filtro, true);
+        }, 300); // Espera 300ms después de que el usuario deje de teclear
     });
-    document.getElementById('filtro-libros').addEventListener('change', () => actualizarResultadosDesdeControles(true));
-    document.getElementById('alcance-busqueda-libros').addEventListener('change', () => actualizarResultadosDesdeControles(true));
 
     function abrirSimuladores(facultadMap) {
         document.getElementById('simuladores-titulo').textContent = 'Simuladores - ' + facultadMap;
