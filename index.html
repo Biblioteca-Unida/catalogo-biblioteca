@@ -694,15 +694,32 @@
       'FEADYS': ['Adm. de Empresas/Pública','Adm. Gestión Emprendedora','Banca y Finanzas','Ciencias de la Educación','Comunicación y Publicidad','Economía','Economía y Finanzas','Economía y Negocios Internacionales','Gestión de Talento Humano','Ingeniería en Logística Global','Inteligencia Artificial y Robótica','Marketing Digital','Relaciones Internacionales','Sistemas']
     };
     function inicializarCatalogosImpresos() {
-        if (!db || window._catalogosImpresosSub) return;
-        window._catalogosImpresosSub = db.collection('catalogos_impresos').onSnapshot(snap => {
-            catalogosImpresos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            catalogosImpresosListos = true;
-            renderizarCatalogosImpresos();
-        }, error => {
-            console.warn('[UNIDA] No se pudieron leer catálogos impresos:', error);
-            // Los enlaces originales permanecen disponibles aunque Firestore falle.
-        });
+        // Carga bajo demanda y de una sola vez: evita mantener un listener abierto
+        // y consumir lecturas continuamente mientras el usuario navega por el catálogo.
+        if (catalogosImpresosListos || window._catalogosImpresosCargando) return;
+
+        try {
+            if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+            if (!db) db = firebase.firestore();
+        } catch (error) {
+            console.warn('[UNIDA] Firebase no está disponible para catálogos impresos:', error);
+            return;
+        }
+
+        window._catalogosImpresosCargando = true;
+        db.collection('catalogos_impresos').get()
+            .then(snap => {
+                catalogosImpresos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                catalogosImpresosListos = true;
+                renderizarCatalogosImpresos();
+            })
+            .catch(error => {
+                console.warn('[UNIDA] No se pudieron leer catálogos impresos:', error);
+                // Los enlaces originales permanecen disponibles aunque Firestore falle.
+            })
+            .finally(() => {
+                window._catalogosImpresosCargando = false;
+            });
     }
     function enlaceDriveValidoImpreso(url) {
         try {const u=new URL(url);return u.protocol==='https:' && ['drive.google.com','docs.google.com'].includes(u.hostname);}catch(_){return false;}
@@ -781,7 +798,10 @@
         document.getElementById('catalogo-section').style.display = 'none';
         document.getElementById('simuladores-section').style.display = 'none';
 
-        if (sectionId === 'facultades-impresa') renderizarCatalogosImpresos();
+        if (sectionId === 'facultades-impresa') {
+            inicializarCatalogosImpresos();
+            renderizarCatalogosImpresos();
+        }
         const target = document.getElementById(sectionId + '-section');
         if (target) target.style.display = 'block';
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1116,7 +1136,7 @@
     // Firebase actualiza silenciosamente en segundo plano.
     cargarDatosInmediatos();
     showSection('dashboard');
-    inicializarDatosCloud();
+    // Firebase se inicializa solo cuando una función realmente lo necesita (catálogos impresos o descargas).
 </script>
 </body>
 </html>
