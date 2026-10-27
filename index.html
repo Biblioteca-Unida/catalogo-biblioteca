@@ -52,6 +52,7 @@
         .facultad-card:hover .overlay { background: rgba(41, 128, 185, 0.9); }
         .facultad-card:hover .carreras-list, .facultad-card:hover .btn-simulador { opacity: 1; transform: translateY(0); }
 
+        /* FEADYS: lista extensa, distribuida sin desbordar la tarjeta */
         .facultad-card-feadys .overlay { padding: 18px 20px; }
         .facultad-card-feadys h2 { margin-bottom: 4px; }
         .carreras-list-feadys {
@@ -88,9 +89,7 @@
         .catalogo-header h2 { font-family: "Cooper Black", serif; color: #1e3c6e; font-size: 2rem; margin: 0; text-transform: uppercase; }
         .btn-volver { background: #e74c3c; color: white; padding: 10px 20px; border: none; border-radius: 8px; font-weight: bold; font-family: 'Poppins', sans-serif; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 8px; }
         .btn-volver:hover { background: #c0392b; }
-        .search-controls { display: flex; gap: 15px; flex-grow: 1; max-width: 850px; flex-wrap: wrap; }
-        .search-scope-select { min-width: 175px; }
-        @media (max-width: 760px) { .search-controls { max-width: 100%; width: 100%; flex-direction: column; } .search-controls select, .search-controls input { width: 100%; box-sizing: border-box; } }
+        .search-controls { display: flex; gap: 15px; flex-grow: 1; max-width: 600px; }
         .search-bar { flex-grow: 1; padding: 12px 15px; border: 1px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 0.9rem; outline: none; transition: 0.3s; }
         .search-bar:focus { border-color: #2980b9; box-shadow: 0 0 5px rgba(41, 128, 185, 0.3); }
         .filter-select { padding: 12px 15px; border: 1px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 0.9rem; outline: none; background: white; cursor: pointer; }
@@ -102,6 +101,7 @@
         .simulador-cover { background-color: #2c3e50; color: white; display: flex; align-items: center; justify-content: center; font-size: 3rem; }
         .libro-info { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; }
         .libro-title { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 1.4rem; color: #1a1a1a; margin: 0 0 5px 0; text-transform: uppercase; }
+        .libro-edicion { font-size: 0.6em; color: #7f8c8d; font-weight: 600; vertical-align: middle; margin-left: 8px; }
         .libro-author { font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 1rem; color: #1e3c6e; margin: 0 0 10px 0; }
         .libro-action { margin-left: 20px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; min-width: 220px; }
         .btn-drive-download { background: #1e3c6e; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.95rem; transition: background 0.3s, transform 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 10px; border: none; cursor: pointer; text-transform: uppercase; width: 100%; box-sizing: border-box; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
@@ -111,12 +111,16 @@
         .download-box { background: white; padding: 50px; border-radius: 20px; text-align: center; max-width: 600px; margin: 0 auto; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         .btn-download { background: #1e3c6e; color: white; padding: 18px 40px; border-radius: 12px; text-decoration: none; font-weight: bold; display: inline-block; margin-top: 25px; transition: 0.3s; }
         
+        /* Estilos de Paginación */
         .paginacion-container { display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 30px; }
         .btn-pag { background: #1e3c6e; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; font-family: 'Poppins', sans-serif; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 8px; }
         .btn-pag:hover:not(:disabled) { background: #2980b9; }
         .btn-pag:disabled { opacity: 0.5; cursor: not-allowed; }
         .pag-info { font-family: 'Poppins', sans-serif; font-weight: 600; color: #555; }
         
+
+
+        /* Modal de identificación previo a la descarga */
         .modal-descarga-overlay { position: fixed; inset: 0; z-index: 5000; background: rgba(15, 23, 42, 0.78); display: none; align-items: center; justify-content: center; padding: 20px; overflow-y: auto; }
         .modal-descarga-overlay.activo { display: flex; }
         .modal-descarga { width: 100%; max-width: 620px; background: #fff; border-radius: 18px; box-shadow: 0 24px 70px rgba(0,0,0,.32); overflow: hidden; animation: modalEntrada .2s ease; }
@@ -151,6 +155,7 @@
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
+        /* Catálogos de la colección impresa administrados desde Firebase */
         .catalogo-impreso-intro { background:#fff; padding:22px 26px; border-radius:14px; margin-bottom:24px; }
         .catalogo-impreso-intro h2 { margin:0 0 7px; color:#1e3c6e; }
         .catalogo-impreso-intro p { margin:0; color:#64748b; }
@@ -165,6 +170,7 @@
         .catalogos-impresos-enlaces { display:flex; flex-wrap:wrap; gap:9px; margin-top:12px; }
         .catalogo-impreso-legacy { padding:8px 11px; border-radius:7px; background:#e0f2fe; color:#1e3c6e; text-decoration:none; font-size:.8rem; }
         @media(max-width:768px){#catalogos-impresos-grid{grid-template-columns:1fr}.catalogo-impreso-card{padding:16px}}
+        /* Catálogos agregados en el admin, manteniendo las tarjetas originales */
         .impresa-nuevos { z-index: 12; width: 85%; max-width: 290px; max-height: 175px; overflow-y: auto; margin-top: 12px; }
         .impresa-nuevos-titulo { color: white; font-size: .78rem; font-weight: 700; margin-bottom: 6px; }
         .impresa-nuevo-link { display: block; padding: 7px 9px; border-radius: 6px; margin: 5px 0; background: #2980b9; color: #fff; font-size: .72rem; text-decoration: none; overflow-wrap: anywhere; }
@@ -220,6 +226,7 @@
 
 <div id="facultades-digital-section" class="container">
     <div class="facultades-grid">
+        <!-- 1. Facultad de Salud -->
         <div class="facultad-card">
             <img src="https://www.unida.edu.py/v4/wp-content/uploads/elementor/thumbs/enfermeria_unida-ql44yi55fcezki8uwy991c9ar3btk20dbmt7sg6ztc.webp" alt="Facultad de Salud">
             <div class="overlay">
@@ -252,6 +259,7 @@
             </div>
         </div>
 
+        <!-- 3. Facultad de Ingeniería -->
         <div class="facultad-card">
             <img src="https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&w=800&q=80" alt="Facultad de Ingeniería">
             <div class="overlay">
@@ -266,6 +274,7 @@
             </div>
         </div>
 
+        <!-- 4. Facultad de C. Jurídicas y Sociales -->
         <div class="facultad-card">
             <img src="https://images.unsplash.com/photo-1505664194779-8beaceb93744?auto=format&fit=crop&w=800&q=80" alt="C. Jurídicas">
             <div class="overlay">
@@ -278,6 +287,7 @@
             </div>
         </div>
 
+        <!-- 5. Facultad de Gestión (Ahora con las carreras que antes eran de FEADYS) -->
         <div class="facultad-card facultad-card-feadys">
             <img src="https://www.unida.edu.py/v4/wp-content/uploads/elementor/thumbs/st_403991497-qfymca815zkjkmjzj5zfgkhhp3a2fdpawj6koah7m8.png" alt="Facultad de Gestión">
             <div class="overlay">
@@ -302,6 +312,7 @@
             </div>
         </div>
 
+        <!-- 6. Nueva Tarjeta: Club de Lectura -->
         <div class="facultad-card">
             <img src="https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=800&q=80" alt="Club de Lectura">
             <div class="overlay">
@@ -321,14 +332,10 @@
             <h2 id="catalogo-titulo">Catálogo</h2>
         </div>
         <div class="search-controls">
-            <select id="filtro-libros" class="filter-select" aria-label="Buscar por">
+            <select id="filtro-libros" class="filter-select">
                 <option value="todos">Buscar por...</option>
                 <option value="autor">Autor</option>
                 <option value="tema">Tema (Título)</option>
-            </select>
-            <select id="alcance-busqueda-libros" class="filter-select search-scope-select" aria-label="Alcance de búsqueda">
-                <option value="carrera">Esta carrera</option>
-                <option value="facultad">Toda la facultad</option>
             </select>
             <input type="text" id="buscador-libros" class="search-bar" placeholder="Escribe aquí para buscar (sin importar acentos)...">
         </div>
@@ -343,6 +350,7 @@
         
         <div class="libros-grid-container" id="contenedor-libros"></div>
         
+        <!-- CONTROLES DE PAGINACIÓN -->
         <div id="paginacion-controles" class="paginacion-container" style="display: none;">
             <button id="btn-prev-page" class="btn-pag" onclick="cambiarPagina(-1)"><i class="fas fa-chevron-left"></i> Anterior</button>
             <span id="text-page-info" class="pag-info">Página 1 de 1</span>
@@ -359,7 +367,9 @@
         </div>
     </div>
     <div class="libros-list">
-        <div class="libros-grid-container" id="contenedor-simuladores"></div>
+        <div class="libros-grid-container" id="contenedor-simuladores">
+            <!-- Los simuladores se cargan dinámicamente desde Firebase -->
+        </div>
     </div>
 </div>
 
@@ -370,6 +380,7 @@
             <div class="overlay">
                 <h2 style="margin-bottom: 15px;">Facultad de Salud</h2>
                 <div style="display: flex; flex-direction: column; gap: 10px; width: 80%; max-width: 250px; z-index: 10;">
+                    <!-- Bioquímica: visible desde ahora, sin enlace inventado. Se oculta cuando el admin publica el catálogo. -->
                     <span id="bioquimica-impresa-pendiente" aria-label="Bioquímica: cargando enlace del catálogo" style="color: white; background: #2980b9; padding: 8px 15px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; text-transform: uppercase; text-align: center; opacity: 0.78;">Bioquímica</span>
                     <a href="https://drive.google.com/uc?export=download&id=1npxD5HavcDHiSa8FAyAfR43eGvtM1eZo" target="_blank" style="color: white; text-decoration: none; background: #2980b9; padding: 8px 15px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; text-transform: uppercase; text-align: center; transition: background 0.3s;">Enfermería</a>
                     <a href="https://drive.google.com/uc?export=download&id=1oh2rb7Xra-ozFVoZB_fzCmSpJjhpBrKx" target="_blank" style="color: white; text-decoration: none; background: #2980b9; padding: 8px 15px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; text-transform: uppercase; text-align: center; transition: background 0.3s;">Medicina</a>
@@ -418,26 +429,37 @@
     </div>
 </div>
 
+<!-- PIE DE PÁGINA: Licencia y Firma Digital -->
 <footer style="background-color: #0d233a; color: #ffffff; padding: 40px 20px; text-align: center; margin-top: 50px; border-top: 5px solid #2980b9;">
     <div style="max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 15px;">
+        
+        <!-- Logo de Creative Commons -->
         <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" style="text-decoration: none;">
             <img src="https://mirrors.creativecommons.org/presskit/buttons/88x31/png/by-nc-sa.png" alt="Licencia Creative Commons BY-NC-SA" style="height: 35px; opacity: 0.5; filter: grayscale(100%); transition: all 0.3s ease;" onmouseover="this.style.opacity='1'; this.style.filter='grayscale(0%)'" onmouseout="this.style.opacity='0.5'; this.style.filter='grayscale(100%)'">
         </a>
+        
+        <!-- Texto explicativo -->
         <p style="font-family: 'Poppins', sans-serif; font-size: 13px; color: #cbd5e1; margin: 0;">
             Este portal de la Biblioteca Central opera bajo una Licencia 
             <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank" style="color: #60a5fa; text-decoration: none; font-weight: 600;">Creative Commons Atribución-NoComercial-CompartirIgual 4.0 Internacional</a>.
         </p>
+        
+        <!-- Firma Digital / Créditos de Diseño -->
         <div style="margin-top: 10px;">
             <a href="#" style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); padding: 8px 20px; border-radius: 50px; font-family: 'Poppins', sans-serif; font-size: 13px; color: #94a3b8; transition: all 0.3s ease;" 
                onmouseover="this.style.borderColor='#60a5fa'; this.style.color='#ffffff'; this.style.background='rgba(96, 165, 250, 0.08)';" 
                onmouseout="this.style.borderColor='rgba(255, 255, 255, 0.1)'; this.style.color='#94a3b8'; this.style.background='rgba(255, 255, 255, 0.04)';">
                 <span style="font-size: 15px;">⚡</span>
-                <span>Diseñado y desarrollado por <strong style="color: #60a5fa; font-weight: 600;">Biblioteca Central</strong></span>
+                <!--span>Diseñado y desarrollado por <strong style="color: #60a5fa; font-weight: 600;"> Ricardo Duarte y Thiago Toledo</strong></span-->
+                 <span>Diseñado y desarrollado por <strong style="color: #60a5fa; font-weight: 600;">Biblioteca Central</strong></span>
+
             </a>
         </div>
     </div>
 </footer>
 
+
+<!-- MODAL: IDENTIFICACIÓN PARA DESCARGA -->
 <div id="modal-descarga" class="modal-descarga-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-descarga-titulo">
     <div class="modal-descarga">
         <div class="modal-descarga-header">
@@ -544,6 +566,8 @@
     </div>
 </div>
 
+
+<!-- LECTURA DEL CATÁLOGO EXTERNO Y CONEXIÓN FIREBASE -->
 <script src="catalogo.js"></script>
 
 <script>
@@ -562,6 +586,7 @@
     window.catalogoLibros = [];
     window.simuladoresGlobales = [];
 
+    // --- VARIABLES DE PAGINACIÓN Y ESTADO GLOBAL ---
     const LIBROS_POR_PAGINA = 12;
     let paginaActual = 1;
     let librosFiltradosGlobal = [];
@@ -571,6 +596,7 @@
     const CATALOGO_CACHE_KEY = 'unida_catalogo_global';
     const SIMULADORES_CACHE_KEY = 'unida_simuladores_global';
 
+    // Alias de carreras: permite mostrar registros antiguos de Firebase bajo el nombre actualizado.
     const ALIAS_CARRERAS = {
         "Gestión de Talento Humano": ["Gestión de Talento Humano", "Talento Humano", "Administración y Gestión del Talento Humano"],
         "Ciencias de la Educación": ["Ciencias de la Educación", "Educación"],
@@ -582,85 +608,16 @@
         return ALIAS_CARRERAS[carrera] || [carrera];
     }
 
-    const CARRERAS_POR_FACULTAD = {
-        "salud": ["Bioquímica", "Enfermería", "Kinesiología y Fisioterapia", "Medicina", "Nutrición"],
-        "gestion": ["Administración de Empresas", "Comercio Internacional", "Contaduría Pública", "Ingeniería Comercial", "Marketing y Gestión Comercial", "Relaciones Internacionales y Negocios Globales", "Psicología Organizacional"],
-        "ingenieria": ["Ingeniería Electrónica", "Ingeniería Industrial", "Ingeniería en Sistemas", "Ingeniería en Informática"],
-        "juridicas": ["Derecho", "Ciencias Políticas"],
-        "feadys": ["Adm. de Empresas/Pública", "Adm. Gestión Emprendedora", "Gestión de Talento Humano", "Banca y Finanzas", "Ciencias de la Educación", "Comunicación y Publicidad", "Economía", "Economía y Finanzas", "Economía y Negocios Internacionales", "Ingeniería en Logística Global", "Inteligencia Artificial y Robótica", "Marketing Digital", "Sistemas", "Relaciones Internacionales"]
-    };
-
-    function normalizarBusqueda(valor) {
-        return String(valor || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
-    }
-
-    // --- MEJORA: FUNCIÓN PARA PRE-PROCESAR LOS DATOS DE BÚSQUEDA ---
-    function transformarLibrosConBusqueda(lista) {
-        return lista.map(libro => ({
-            ...libro,
-            _busquedaTitulo: normalizarBusqueda(libro.titulo),
-            _busquedaAutor: normalizarBusqueda(libro.autor)
-        }));
-    }
-
-    function claveFacultadDeCarrera(carrera) {
-        const buscada = normalizarBusqueda(carrera);
-        for (const [facultad, carreras] of Object.entries(CARRERAS_POR_FACULTAD)) {
-            const coincide = carreras.some(nombre => {
-                const variantes = carrerasEquivalentes(nombre);
-                return variantes.some(v => normalizarBusqueda(v) === buscada) || normalizarBusqueda(nombre) === buscada;
-            });
-            if (coincide) return facultad;
-        }
-        if (buscada === normalizarBusqueda('Marketing')) return 'gestion';
-        return null;
-    }
-
-    function carrerasDeFacultad(carrera) {
-        const clave = claveFacultadDeCarrera(carrera);
-        return clave ? CARRERAS_POR_FACULTAD[clave] : [];
-    }
-
-    function actualizarOpcionesAlcance(carrera) {
-        const selector = document.getElementById('alcance-busqueda-libros');
-        if (!selector) return;
-        const disponible = Boolean(carrerasDeFacultad(carrera).length);
-        const opcionFacultad = selector.querySelector('option[value="facultad"]');
-        opcionFacultad.disabled = !disponible;
-        if (!disponible) selector.value = 'carrera';
-    }
-
-    function claveDuplicadoLibro(libro) {
-        const enlace = String(libro.link || libro.enlace || '').trim().replace(/\/$/, '');
-        if (!enlace) return '';
-        return [libro._busquedaTitulo || normalizarBusqueda(libro.titulo), libro._busquedaAutor || normalizarBusqueda(libro.autor), enlace].join('|||');
-    }
-
-    function agruparDuplicadosExactos(libros) {
-        const porClave = new Map();
-        const resultado = [];
-        libros.forEach(libro => {
-            const clave = claveDuplicadoLibro(libro);
-            if (!clave) { resultado.push({...libro}); return; }
-            if (!porClave.has(clave)) {
-                const copia = {...libro, _carrerasCoincidentes: [libro.carrera].filter(Boolean)};
-                porClave.set(clave, copia);
-                resultado.push(copia);
-            } else {
-                const existente = porClave.get(clave);
-                const carrera = String(libro.carrera || '').trim();
-                if (carrera && !existente._carrerasCoincidentes.includes(carrera)) existente._carrerasCoincidentes.push(carrera);
-            }
-        });
-        return resultado;
-    }
-
+    // --- CARGA INMEDIATA: CACHE/ARCHIVO ESTÁTICO PRIMERO, FIREBASE DESPUÉS ---
     function cargarDatosInmediatos() {
+        // El catálogo completo ya supera la cuota de localStorage en algunos equipos.
+        // Se usa catalogo.js como respaldo inmediato y Firestore como fuente actualizada.
+        // Eliminamos solamente el caché obsoleto del catálogo; no tocamos datos de usuario.
         let origenCatalogo = 'vacío';
         try { localStorage.removeItem(CATALOGO_CACHE_KEY); } catch (_) {}
 
         if (!window.catalogoLibros.length && typeof catalogoLibros !== 'undefined' && Array.isArray(catalogoLibros)) {
-            window.catalogoLibros = transformarLibrosConBusqueda(catalogoLibros);
+            window.catalogoLibros = [...catalogoLibros];
             origenCatalogo = 'catalogo.js';
         }
 
@@ -693,8 +650,10 @@
             db = firebase.firestore();
             inicializarCatalogosImpresos();
 
+            // Firestore sincroniza en segundo plano: el catálogo ya está utilizable.
             const librosPorId = new Map();
             db.collection("libros").onSnapshot(snapshot => {
+                // Solo procesar los documentos que cambiaron desde la última sincronización.
                 snapshot.docChanges().forEach(change => {
                     if (change.type === 'removed') librosPorId.delete(change.doc.id);
                     else librosPorId.set(change.doc.id, { _id: change.doc.id, ...change.doc.data() });
@@ -702,9 +661,11 @@
                 const librosCloud = Array.from(librosPorId.values());
 
                 if (librosCloud.length > 0) {
-                    window.catalogoLibros = transformarLibrosConBusqueda(librosCloud);
+                    window.catalogoLibros = librosCloud;
+                    // Evitar almacenar miles de registros (y posibles imágenes base64) en localStorage.
+                    // La fuente vigente es Firestore, con catalogo.js como respaldo.
                 } else if (!window.catalogoLibros.length && typeof catalogoLibros !== 'undefined' && Array.isArray(catalogoLibros)) {
-                    window.catalogoLibros = transformarLibrosConBusqueda(catalogoLibros);
+                    window.catalogoLibros = [...catalogoLibros];
                 }
 
                 console.info(`[UNIDA] Firebase sincronizó ${librosCloud.length} libros en ${Math.round(performance.now() - inicioFirebase)} ms.`);
@@ -714,7 +675,7 @@
                     const carreraActual = tituloActual.replace('Catálogo - ', '');
                     const texto = document.getElementById('buscador-libros').value;
                     const filtro = document.getElementById('filtro-libros').value;
-                    mostrarLibros(tituloActual === 'Catálogo' ? null : carreraActual, texto, filtro, false, document.getElementById('alcance-busqueda-libros').value);
+                    mostrarLibros(tituloActual === 'Catálogo' ? null : carreraActual, texto, filtro, false);
                 }
             }, error => {
                 console.warn('[UNIDA] Firestore libros no disponible; se mantiene el catálogo inmediato.', error);
@@ -741,8 +702,8 @@
 
     function usarRespaldoLocal() {
         if (!window.catalogoLibros.length) {
-            if (typeof catalogoLibros !== 'undefined' && Array.isArray(catalogoLibros)) {
-                window.catalogoLibros = transformarLibrosConBusqueda(catalogoLibros);
+            if (!window.catalogoLibros.length && typeof catalogoLibros !== 'undefined' && Array.isArray(catalogoLibros)) {
+                window.catalogoLibros = [...catalogoLibros];
             }
         }
 
@@ -758,7 +719,18 @@
         }
     }
 
-    const CATALOGOS_IMPRESOS = {};
+
+    const ORDEN_FACULTADES_IMPRESAS = [
+        'Facultad de Salud','Facultad de Gestión','Facultad de Ingeniería',
+        'Facultad de C. Jurídicas y Sociales','FEADYS'
+    ];
+    const CARRERAS_IMPRESAS = {
+      'Facultad de Salud': ['Bioquímica','Enfermería','Kinesiología y Fisioterapia','Medicina','Nutrición'],
+      'Facultad de Gestión': ['Administración de Empresas','Comercio Internacional','Contaduría Pública','Ingeniería Comercial','Marketing','Psicología Organizacional','Relaciones Internacionales y Negocios Globales'],
+      'Facultad de Ingeniería': ['Ingeniería Electrónica','Ingeniería Industrial','Ingeniería en Informática','Ingeniería en Sistemas'],
+      'Facultad de C. Jurídicas y Sociales': ['Ciencias Políticas','Derecho'],
+      'FEADYS': ['Adm. de Empresas/Pública','Adm. Gestión Emprendedora','Banca y Finanzas','Ciencias de la Educación','Comunicación y Publicidad','Economía','Economía y Finanzas','Economía y Negocios Internacionales','Gestión de Talento Humano','Ingeniería en Logística Global','Inteligencia Artificial y Robótica','Marketing Digital','Relaciones Internacionales','Sistemas']
+    };
     function inicializarCatalogosImpresos() {
         if (!db || window._catalogosImpresosSub) return;
         window._catalogosImpresosSub = db.collection('catalogos_impresos').onSnapshot(snap => {
@@ -767,18 +739,18 @@
             renderizarCatalogosImpresos();
         }, error => {
             console.warn('[UNIDA] No se pudieron leer catálogos impresos:', error);
+            // Los enlaces originales permanecen disponibles aunque Firestore falle.
         });
     }
-
     function enlaceDriveValidoImpreso(url) {
-        try { const u = new URL(url); return u.protocol === 'https:' && ['drive.google.com', 'docs.google.com'].includes(u.hostname); } catch (_) { return false; }
+        try {const u=new URL(url);return u.protocol==='https:' && ['drive.google.com','docs.google.com'].includes(u.hostname);}catch(_){return false;}
     }
-
     function normalizarCarreraImpresa(valor) {
         return String(valor || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
     }
-
     function renderizarCatalogosImpresos() {
+        // Diseño original: las facultades y sus enlaces anteriores están siempre visibles.
+        // Los enlaces nuevos de Firestore se añaden dentro de la facultad correspondiente.
         document.querySelectorAll('[data-catalogos-facultad]').forEach(contenedor => {
             contenedor.replaceChildren();
             const facultad = contenedor.dataset.catalogosFacultad;
@@ -788,6 +760,7 @@
             const disponibles = catalogosImpresos.filter(c =>
                 c.activo !== false && c.facultad === facultad && enlaceDriveValidoImpreso(c.link)
             );
+            // En Salud, sustituir el aviso de Bioquímica cuando ya existe un catálogo vigente.
             if (facultad === 'Facultad de Salud') {
                 const avisoBioquimica = document.getElementById('bioquimica-impresa-pendiente');
                 if (avisoBioquimica) {
@@ -812,11 +785,12 @@
                     enlace.addEventListener('click', e => e.stopPropagation());
                     filaBotones.prepend(enlace);
                 }
+                // Solo el resto de catálogos complementarios va a la sección inferior.
                 const adicionales = disponibles.filter(c => String(c.carrera || '').trim().toLocaleLowerCase('es') !== 'bioquímica');
                 disponibles.length = 0;
                 disponibles.push(...adicionales);
             }
-            if (!disponibles.length) return;
+            if (!disponibles.length) return; // Conservar enlaces originales mientras no haya registros nuevos.
             const grupo = document.createElement('div');
             grupo.className = 'impresa-nuevos-lista';
             const titulo = document.createElement('div');
@@ -860,55 +834,32 @@
 
     function abrirCatalogo(carrera) {
         document.getElementById('catalogo-titulo').textContent = 'Catálogo - ' + carrera;
-        document.getElementById('buscador-libros').value = '';
-        document.getElementById('filtro-libros').value = 'todos';
-        document.getElementById('alcance-busqueda-libros').value = 'carrera';
-        actualizarOpcionesAlcance(carrera);
+        document.getElementById('buscador-libros').value = ''; // Limpiar buscador
         mostrarLibros(carrera);
         showSection('catalogo');
     }
 
-    // --- MEJORA APLICADA AQUÍ: BÚSQUEDA ULTRARRÁPIDA CON CAMPOS PRE-PROCESADOS ---
-    function mostrarLibros(carreraFiltrada = null, textoBusqueda = '', filtroTipo = 'todos', resetPagina = true, alcanceBusqueda = 'carrera') {
+    // --- FUNCIÓN CENTRAL DE FILTRADO Y PAGINACIÓN ---
+    function mostrarLibros(carreraFiltrada = null, textoBusqueda = '', filtroTipo = 'todos', resetPagina = true) {
         const mensajeVacio = document.getElementById('mensaje-vacio');
-        textoBusqueda = normalizarBusqueda(textoBusqueda);
+        
+        textoBusqueda = textoBusqueda.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
         let librosFiltrados = window.catalogoLibros || [];
-        const selectorAlcance = document.getElementById('alcance-busqueda-libros');
-        if (carreraFiltrada && selectorAlcance && alcanceBusqueda === 'carrera') alcanceBusqueda = selectorAlcance.value;
 
         if (carreraFiltrada) {
-            if (alcanceBusqueda === 'facultad') {
-                const carreras = carrerasDeFacultad(carreraFiltrada);
-                if (carreras.length) {
-                    const equivalentesNormalizados = new Set();
-                    carreras.forEach(nombre => carrerasEquivalentes(nombre).forEach(v => equivalentesNormalizados.add(normalizarBusqueda(v))));
-                    if (normalizarBusqueda(carreraFiltrada) === normalizarBusqueda('Marketing')) equivalentesNormalizados.add(normalizarBusqueda('Marketing y Gestión Comercial'));
-                    librosFiltrados = librosFiltrados.filter(libro => equivalentesNormalizados.has(normalizarBusqueda(libro.carrera)));
-                } else {
-                    librosFiltrados = librosFiltrados.filter(libro => carrerasEquivalentes(carreraFiltrada).some(c => normalizarBusqueda(c) === normalizarBusqueda(libro.carrera)));
-                }
-            } else {
-                const equivalentes = carrerasEquivalentes(carreraFiltrada).map(normalizarBusqueda);
-                if (normalizarBusqueda(carreraFiltrada) === normalizarBusqueda('Marketing')) equivalentes.push(normalizarBusqueda('Marketing y Gestión Comercial'));
-                librosFiltrados = librosFiltrados.filter(libro => equivalentes.includes(normalizarBusqueda(libro.carrera)));
-            }
+            const equivalentes = carrerasEquivalentes(carreraFiltrada);
+            librosFiltrados = librosFiltrados.filter(libro => equivalentes.includes(libro.carrera));
         }
 
         if (textoBusqueda) {
             librosFiltrados = librosFiltrados.filter(libro => {
-                // Usamos directamente las propiedades pre-procesadas para máxima velocidad
-                const titulo = libro._busquedaTitulo || normalizarBusqueda(libro.titulo);
-                const autor = libro._busquedaAutor || normalizarBusqueda(libro.autor);
-                
+                const titulo = (libro.titulo || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                const autor = (libro.autor || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
                 if (filtroTipo === 'autor') return autor.includes(textoBusqueda);
                 if (filtroTipo === 'tema') return titulo.includes(textoBusqueda);
                 return titulo.includes(textoBusqueda) || autor.includes(textoBusqueda);
             });
-        }
-
-        if (alcanceBusqueda === 'facultad' && carreraFiltrada && carrerasDeFacultad(carreraFiltrada).length) {
-            librosFiltrados = agruparDuplicadosExactos(librosFiltrados);
         }
 
         librosFiltradosGlobal = librosFiltrados;
@@ -925,6 +876,7 @@
         }
     }
 
+    // --- RENDERIZADO DE LA PÁGINA ESPECÍFICA ---
     function renderizarPaginaActiva() {
         const contenedor = document.getElementById('contenedor-libros');
         contenedor.innerHTML = '';
@@ -937,6 +889,7 @@
             const card = document.createElement('div');
             card.className = 'libro-card';
             
+            // LAZY LOADING activado en el <img>
             card.innerHTML = `
                 <div class="libro-cover">
                     <img src="${libro.imagen || 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=300&q=80'}" alt="Portada" loading="lazy" decoding="async" fetchpriority="low" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=300&q=60';" style="width:100%; height:100%; object-fit:cover;">
@@ -951,22 +904,6 @@
                     </button>
                 </div>
             `;
-            const carrerasCoincidentes = Array.isArray(libro._carrerasCoincidentes) ? libro._carrerasCoincidentes : [];
-            if (carrerasCoincidentes.length > 1) {
-                const origen = document.createElement('p');
-                origen.className = 'libro-author';
-                origen.style.fontSize = '0.82rem';
-                origen.style.marginTop = '2px';
-                origen.textContent = 'Disponible en: ' + carrerasCoincidentes.join(', ');
-                card.querySelector('.libro-info').appendChild(origen);
-            } else if (document.getElementById('alcance-busqueda-libros')?.value === 'facultad' && libro.carrera) {
-                const origen = document.createElement('p');
-                origen.className = 'libro-author';
-                origen.style.fontSize = '0.82rem';
-                origen.style.marginTop = '2px';
-                origen.textContent = 'Catálogo: ' + libro.carrera;
-                card.querySelector('.libro-info').appendChild(origen);
-            }
             const btnDescarga = card.querySelector('.btn-registro-descarga');
             if (btnDescarga) btnDescarga.addEventListener('click', () => abrirModalDescarga(libro));
             contenedor.appendChild(card);
@@ -975,8 +912,12 @@
         actualizarBotonesPaginacion();
     }
 
+
+    // --- REGISTRO DE DESCARGAS ---
     function abrirModalDescarga(libro) {
         libroPendienteDescarga = libro;
+        // Los títulos antiguos pueden contener etiquetas HTML de edición.
+        // Extraemos únicamente el texto visible; jamás ejecutamos HTML desde Firestore.
         const tituloBruto = String(libro.titulo || 'Libro seleccionado');
         const tituloPlano = new DOMParser().parseFromString(tituloBruto, 'text/html').body.textContent
             .replace(/\s+/g, ' ').trim();
@@ -1103,6 +1044,7 @@
         btn.disabled = true;
         btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Registrando...';
 
+        // Abrimos una pestaña durante el gesto del usuario para evitar el bloqueo de pop-ups.
         const pestaña = window.open('about:blank', '_blank');
         if (pestaña) {
             try { pestaña.document.title = 'Preparando descarga...'; } catch (_) {}
@@ -1157,6 +1099,7 @@
         if (paginaActual > totalPaginas) paginaActual = totalPaginas;
         
         renderizarPaginaActiva();
+        // Deslizar suavemente hacia arriba
         document.getElementById('catalogo-section').scrollIntoView({ behavior: 'smooth' });
     }
 
@@ -1172,21 +1115,17 @@
         btnSig.disabled = paginaActual >= totalPaginas;
     }
 
-    function actualizarResultadosDesdeControles(resetPagina = true) {
-        const tituloActual = document.getElementById('catalogo-titulo').textContent;
-        const carreraActual = tituloActual.replace('Catálogo - ', '');
-        const texto = document.getElementById('buscador-libros').value;
-        const filtro = document.getElementById('filtro-libros').value;
-        const alcance = document.getElementById('alcance-busqueda-libros').value;
-        mostrarLibros(tituloActual === 'Catálogo' ? null : carreraActual, texto, filtro, resetPagina, alcance);
-    }
-
-    document.getElementById('buscador-libros').addEventListener('input', () => {
+    // --- DEBOUNCE (RETRASO INTELIGENTE) EN BÚSQUEDA ---
+    document.getElementById('buscador-libros').addEventListener('input', (e) => {
         clearTimeout(timeoutBusqueda);
-        timeoutBusqueda = setTimeout(() => actualizarResultadosDesdeControles(true), 300);
+        timeoutBusqueda = setTimeout(() => {
+            const texto = e.target.value;
+            const filtro = document.getElementById('filtro-libros').value;
+            const tituloActual = document.getElementById('catalogo-titulo').textContent;
+            const carreraActual = tituloActual.replace('Catálogo - ', '');
+            mostrarLibros(tituloActual === 'Catálogo' ? null : carreraActual, texto, filtro, true);
+        }, 300); // Espera 300ms después de que el usuario deje de teclear
     });
-    document.getElementById('filtro-libros').addEventListener('change', () => actualizarResultadosDesdeControles(true));
-    document.getElementById('alcance-busqueda-libros').addEventListener('change', () => actualizarResultadosDesdeControles(true));
 
     function abrirSimuladores(facultadMap) {
         document.getElementById('simuladores-titulo').textContent = 'Simuladores - ' + facultadMap;
@@ -1219,6 +1158,8 @@
         showSection('simuladores');
     }
 
+    // La interfaz se muestra ya con cache/catalogo.js.
+    // Firebase actualiza silenciosamente en segundo plano.
     cargarDatosInmediatos();
     showSection('dashboard');
     inicializarDatosCloud();
