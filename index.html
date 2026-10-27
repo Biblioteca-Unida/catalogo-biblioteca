@@ -1032,7 +1032,8 @@
 
             const eventoDescarga = {
                 ...datosPersona,
-                libroId: libro._id || null,
+                // El catálogo estático no siempre incluye _id; las reglas exigen que libroId sea texto.
+                libroId: String(libro._id || libro.id || libro.link || ''),
                 tituloLibro: libro.titulo || '',
                 autorLibro: libro.autor || '',
                 carreraLibro: libro.carrera || '',
@@ -1050,8 +1051,17 @@
             else window.open(destino, '_blank', 'noopener');
         } catch (error) {
             console.error('[UNIDA] No se pudo registrar la descarga:', error);
-            if (pestaña) pestaña.close();
-            alert('No se pudo registrar la descarga. Verificá tu conexión e intentá nuevamente.');
+            // El registro estadístico no debe impedir que el usuario acceda al libro.
+            // Se informa el fallo y se abre igualmente el enlace solicitado.
+            alert('No se pudo guardar el registro estadístico en este momento. Vamos a abrir el libro igualmente.');
+            const destino = libro.link;
+            cerrarModalDescarga();
+            if (pestaña) {
+                try { pestaña.location.href = destino; }
+                catch (_) { window.open(destino, '_blank', 'noopener'); }
+            } else {
+                window.open(destino, '_blank', 'noopener');
+            }
         } finally {
             btn.disabled = false;
             btn.innerHTML = textoOriginal;
