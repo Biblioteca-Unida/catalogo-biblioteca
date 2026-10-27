@@ -381,7 +381,7 @@
                 <h2 style="margin-bottom: 15px;">Facultad de Salud</h2>
                 <div style="display: flex; flex-direction: column; gap: 10px; width: 80%; max-width: 250px; z-index: 10;">
                     <!-- Bioquímica: visible desde ahora, sin enlace inventado. Se oculta cuando el admin publica el catálogo. -->
-                    <span id="bioquimica-impresa-pendiente" aria-label="Bioquímica: cargando enlace del catálogo" style="color: white; background: #2980b9; padding: 8px 15px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; text-transform: uppercase; text-align: center; opacity: 0.78;">Bioquímica</span>
+                    <span id="bioquimica-impresa-pendiente" aria-label="Bioquímica: catálogo impreso pendiente de publicación" style="color: white; background: #2980b9; padding: 8px 15px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; text-transform: uppercase; text-align: center; opacity: 0.78;">Bioquímica <small style="display:block; font-weight:400; font-size:0.7rem; text-transform:none;">Catálogo en preparación</small></span>
                     <a href="https://drive.google.com/uc?export=download&id=1npxD5HavcDHiSa8FAyAfR43eGvtM1eZo" target="_blank" style="color: white; text-decoration: none; background: #2980b9; padding: 8px 15px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; text-transform: uppercase; text-align: center; transition: background 0.3s;">Enfermería</a>
                     <a href="https://drive.google.com/uc?export=download&id=1oh2rb7Xra-ozFVoZB_fzCmSpJjhpBrKx" target="_blank" style="color: white; text-decoration: none; background: #2980b9; padding: 8px 15px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; text-transform: uppercase; text-align: center; transition: background 0.3s;">Medicina</a>
                     <a href="https://drive.google.com/uc?export=download&id=15DE4MTKmr59IGKd1fUvFn1TCj8lyPIXK" target="_blank" style="color: white; text-decoration: none; background: #2980b9; padding: 8px 15px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; text-transform: uppercase; text-align: center; transition: background 0.3s;">Nutrición</a>
@@ -643,59 +643,21 @@
     }
 
     async function inicializarDatosCloud() {
-        const inicioFirebase = performance.now();
-
         try {
+            // Inicializar Firebase sin descargar colecciones automáticamente.
+            // El catálogo público se carga primero desde catalogo.js.
             if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
             db = firebase.firestore();
-            inicializarCatalogosImpresos();
 
-            // Firestore sincroniza en segundo plano: el catálogo ya está utilizable.
-            const librosPorId = new Map();
-            db.collection("libros").onSnapshot(snapshot => {
-                // Solo procesar los documentos que cambiaron desde la última sincronización.
-                snapshot.docChanges().forEach(change => {
-                    if (change.type === 'removed') librosPorId.delete(change.doc.id);
-                    else librosPorId.set(change.doc.id, { _id: change.doc.id, ...change.doc.data() });
-                });
-                const librosCloud = Array.from(librosPorId.values());
-
-                if (librosCloud.length > 0) {
-                    window.catalogoLibros = librosCloud;
-                    // Evitar almacenar miles de registros (y posibles imágenes base64) en localStorage.
-                    // La fuente vigente es Firestore, con catalogo.js como respaldo.
-                } else if (!window.catalogoLibros.length && typeof catalogoLibros !== 'undefined' && Array.isArray(catalogoLibros)) {
-                    window.catalogoLibros = [...catalogoLibros];
-                }
-
-                console.info(`[UNIDA] Firebase sincronizó ${librosCloud.length} libros en ${Math.round(performance.now() - inicioFirebase)} ms.`);
-
-                if (document.getElementById('catalogo-section').style.display === 'block') {
-                    const tituloActual = document.getElementById('catalogo-titulo').textContent;
-                    const carreraActual = tituloActual.replace('Catálogo - ', '');
-                    const texto = document.getElementById('buscador-libros').value;
-                    const filtro = document.getElementById('filtro-libros').value;
-                    mostrarLibros(tituloActual === 'Catálogo' ? null : carreraActual, texto, filtro, false);
-                }
-            }, error => {
-                console.warn('[UNIDA] Firestore libros no disponible; se mantiene el catálogo inmediato.', error);
-                usarRespaldoLocal();
-            });
-
-            db.collection("simuladores").onSnapshot(snapshot => {
-                const simsCloud = [];
-                snapshot.forEach(doc => simsCloud.push(doc.data()));
-
-                if (simsCloud.length > 0) {
-                    window.simuladoresGlobales = simsCloud;
-                    guardarCacheSeguro(SIMULADORES_CACHE_KEY, simsCloud);
-                }
-            }, error => {
-                console.warn('[UNIDA] Firestore simuladores no disponible; se mantiene el respaldo.', error);
-            });
-
-        } catch (e) {
-            console.warn('[UNIDA] No se pudo iniciar Firebase; se mantiene el catálogo inmediato.', e);
+            console.info(
+                '[UNIDA] Firebase inicializado sin lecturas automáticas. ' +
+                'El catálogo se carga desde catalogo.js.'
+            );
+        } catch (error) {
+            console.warn(
+                '[UNIDA] Firebase no disponible; se mantiene el catálogo local.',
+                error
+            );
             usarRespaldoLocal();
         }
     }
@@ -745,9 +707,6 @@
     function enlaceDriveValidoImpreso(url) {
         try {const u=new URL(url);return u.protocol==='https:' && ['drive.google.com','docs.google.com'].includes(u.hostname);}catch(_){return false;}
     }
-    function normalizarCarreraImpresa(valor) {
-        return String(valor || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
-    }
     function renderizarCatalogosImpresos() {
         // Diseño original: las facultades y sus enlaces anteriores están siempre visibles.
         // Los enlaces nuevos de Firestore se añaden dentro de la facultad correspondiente.
@@ -765,13 +724,13 @@
                 const avisoBioquimica = document.getElementById('bioquimica-impresa-pendiente');
                 if (avisoBioquimica) {
                     avisoBioquimica.style.display = disponibles.some(c =>
-                        normalizarCarreraImpresa(c.carrera) === 'bioquimica'
+                        String(c.carrera || '').trim().toLocaleLowerCase('es') === 'bioquímica'
                     ) ? 'none' : 'block';
                 }
             }
             if (facultad === 'Facultad de Salud') {
                 const filaBotones = document.getElementById('bioquimica-impresa-pendiente')?.parentElement;
-                const bio = disponibles.filter(c => normalizarCarreraImpresa(c.carrera) === 'bioquimica');
+                const bio = disponibles.filter(c => String(c.carrera || '').trim().toLocaleLowerCase('es') === 'bioquímica');
                 if (bio.length && filaBotones) {
                     const c = bio[0];
                     const enlace = document.createElement('a');
@@ -916,12 +875,7 @@
     // --- REGISTRO DE DESCARGAS ---
     function abrirModalDescarga(libro) {
         libroPendienteDescarga = libro;
-        // Los títulos antiguos pueden contener etiquetas HTML de edición.
-        // Extraemos únicamente el texto visible; jamás ejecutamos HTML desde Firestore.
-        const tituloBruto = String(libro.titulo || 'Libro seleccionado');
-        const tituloPlano = new DOMParser().parseFromString(tituloBruto, 'text/html').body.textContent
-            .replace(/\s+/g, ' ').trim();
-        document.getElementById('descarga-libro-titulo').textContent = tituloPlano || 'Libro seleccionado';
+        document.getElementById('descarga-libro-titulo').textContent = libro.titulo || 'Libro seleccionado';
         document.getElementById('descarga-libro-autor').textContent = libro.autor ? `Autor: ${libro.autor}` : '';
         cargarDatosDescargaGuardados();
         actualizarCamposDescarga();
