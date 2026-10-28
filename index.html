@@ -1142,11 +1142,14 @@
         showSection('simuladores');
     }
 
-    // La interfaz se muestra ya con cache/catalogo.js.
-    // Firebase actualiza silenciosamente en segundo plano.
+    // Mostrar el catálogo local inmediatamente para no depender de Firestore
+    // para la primera carga ni generar lecturas innecesarias.
     cargarDatosInmediatos();
     showSection('dashboard');
-    // Firebase se inicializa solo cuando una función realmente lo necesita (catálogos impresos o descargas).
+
+    // Inicializar la conexión Firebase al abrir el sitio, sin leer colecciones.
+    // Las colecciones se consultan bajo demanda desde las funciones que las necesitan.
+    inicializarDatosCloud();
 </script>
 </body>
 </html>
