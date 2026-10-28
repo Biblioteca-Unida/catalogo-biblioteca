@@ -103,6 +103,8 @@
         .libro-title { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 1.4rem; color: #1a1a1a; margin: 0 0 5px 0; text-transform: uppercase; }
         .libro-edicion { font-size: 0.6em; color: #7f8c8d; font-weight: 600; vertical-align: middle; margin-left: 8px; }
         .libro-author { font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 1rem; color: #1e3c6e; margin: 0 0 10px 0; }
+        .libro-carrera { font-size: .88rem; color: #475569; margin: 0 0 8px 0; }
+        .libro-carrera i { color: #2980b9; margin-right: 5px; }
         .libro-action { margin-left: 20px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; min-width: 220px; }
         .btn-drive-download { background: #1e3c6e; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.95rem; transition: background 0.3s, transform 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 10px; border: none; cursor: pointer; text-transform: uppercase; width: 100%; box-sizing: border-box; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .btn-drive-download:hover { background: #2980b9; transform: translateY(-2px); }
@@ -591,6 +593,7 @@
     let paginaActual = 1;
     let librosFiltradosGlobal = [];
     let timeoutBusqueda;
+    let carreraCatalogoActual = null;
     let libroPendienteDescarga = null;
     const DESCARGA_STORAGE_KEY = 'unida_datos_descarga_v1';
     const CATALOGO_CACHE_KEY = 'unida_catalogo_global';
@@ -812,9 +815,10 @@
     }
 
     function abrirCatalogo(carrera) {
-        document.getElementById('catalogo-titulo').textContent = 'Catálogo - ' + carrera;
+        carreraCatalogoActual = carrera || null;
+        document.getElementById('catalogo-titulo').textContent = carrera ? 'Catálogo - ' + carrera : 'Catálogo';
         document.getElementById('buscador-libros').value = ''; // Limpiar buscador
-        mostrarLibros(carrera);
+        mostrarLibros(carreraCatalogoActual);
         showSection('catalogo');
     }
 
@@ -826,7 +830,9 @@
 
         let librosFiltrados = window.catalogoLibros || [];
 
-        if (carreraFiltrada) {
+        // Sin texto, se mantiene el catálogo de la carrera elegida.
+        // Al buscar por título o autor, la búsqueda se amplía a TODAS las carreras.
+        if (carreraFiltrada && !textoBusqueda) {
             const equivalentes = carrerasEquivalentes(carreraFiltrada);
             librosFiltrados = librosFiltrados.filter(libro => equivalentes.includes(libro.carrera));
         }
@@ -917,7 +923,8 @@
     function renderizarPaginaActiva() {
         const contenedor = document.getElementById('contenedor-libros');
         contenedor.innerHTML = '';
-        
+        const busquedaGlobalActiva = Boolean(document.getElementById('buscador-libros').value.trim());
+
         const inicio = (paginaActual - 1) * LIBROS_POR_PAGINA;
         const fin = inicio + LIBROS_POR_PAGINA;
         const librosPagina = librosFiltradosGlobal.slice(inicio, fin);
@@ -934,6 +941,7 @@
                 <div class="libro-info">
                     <h3 class="libro-title">${libro.titulo}</h3>
                     <p class="libro-author">${libro.autor}</p>
+                    ${busquedaGlobalActiva ? `<p class="libro-carrera"><i class="fas fa-map-marker-alt"></i> Disponible en: <strong>${libro.carrera || 'Carrera no especificada'}</strong></p>` : ''}
                 </div>
                 <div class="libro-action">
                     <button type="button" class="btn-drive-download btn-registro-descarga">
@@ -1166,9 +1174,7 @@
         timeoutBusqueda = setTimeout(() => {
             const texto = e.target.value;
             const filtro = document.getElementById('filtro-libros').value;
-            const tituloActual = document.getElementById('catalogo-titulo').textContent;
-            const carreraActual = tituloActual.replace('Catálogo - ', '');
-            mostrarLibros(tituloActual === 'Catálogo' ? null : carreraActual, texto, filtro, true);
+            mostrarLibros(carreraCatalogoActual, texto, filtro, true);
         }, 300); // Espera 300ms después de que el usuario deje de teclear
     });
 
