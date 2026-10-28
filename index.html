@@ -855,6 +855,64 @@
         }
     }
 
+    // Portadas guardadas en Firestore: solo consulta los libros visibles en la página actual.
+    // La caché vive en memoria durante esta visita y no persiste imágenes Base64 en localStorage.
+    const portadasFirestoreCache = new Map();
+    const portadasFirestoreSolicitadas = new Set();
+
+    async function cargarPortadasFirestore(librosPagina) {
+        if (!db || !Array.isArray(librosPagina) || !librosPagina.length) return;
+
+        const enlaces = [...new Set(librosPagina
+            .map(libro => typeof libro.link === 'string' ? libro.link.trim() : '')
+            .filter(link => link && !portadasFirestoreCache.has(link) && !portadasFirestoreSolicitadas.has(link)))];
+
+        // La página muestra 12 libros; la consulta "in" recupera solo coincidencias exactas por enlace.
+        if (!enlaces.length) {
+            aplicarPortadasEnPantalla(librosPagina);
+            return;
+        }
+
+        enlaces.forEach(link => portadasFirestoreSolicitadas.add(link));
+
+        try {
+            const snapshot = await db.collection('libros')
+                .where('link', 'in', enlaces.slice(0, 30))
+                .get();
+
+            snapshot.forEach(doc => {
+                const datos = doc.data() || {};
+                const enlace = typeof datos.link === 'string' ? datos.link.trim() : '';
+                const imagen = typeof datos.imagen === 'string' ? datos.imagen.trim() : '';
+                if (enlace && imagen) portadasFirestoreCache.set(enlace, imagen);
+            });
+        } catch (error) {
+            console.warn('[UNIDA] No se pudieron recuperar las portadas de Firebase para esta página:', error);
+        } finally {
+            enlaces.forEach(link => portadasFirestoreSolicitadas.delete(link));
+            aplicarPortadasEnPantalla(librosPagina);
+        }
+    }
+
+    function aplicarPortadasEnPantalla(librosPagina) {
+        const enlaces = new Set(librosPagina
+            .map(libro => typeof libro.link === 'string' ? libro.link.trim() : '')
+            .filter(Boolean));
+
+        document.querySelectorAll('#contenedor-libros img[data-libro-link]').forEach(img => {
+            const enlace = img.dataset.libroLink || '';
+            if (!enlaces.has(enlace)) return;
+            const portada = portadasFirestoreCache.get(enlace);
+            if (portada && img.src !== portada) {
+                img.onerror = function () {
+                    this.onerror = null;
+                    this.src = 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=300&q=60';
+                };
+                img.src = portada;
+            }
+        });
+    }
+
     // --- RENDERIZADO DE LA PÁGINA ESPECÍFICA ---
     function renderizarPaginaActiva() {
         const contenedor = document.getElementById('contenedor-libros');
@@ -871,7 +929,7 @@
             // LAZY LOADING activado en el <img>
             card.innerHTML = `
                 <div class="libro-cover">
-                    <img src="${libro.imagen || 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=300&q=80'}" alt="Portada" loading="lazy" decoding="async" fetchpriority="low" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=300&q=60';" style="width:100%; height:100%; object-fit:cover;">
+                    <img data-libro-link="${String(libro.link || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;')}" src="${libro.imagen || 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=300&q=80'}" alt="Portada" loading="lazy" decoding="async" fetchpriority="low" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=300&q=60';" style="width:100%; height:100%; object-fit:cover;">
                 </div>
                 <div class="libro-info">
                     <h3 class="libro-title">${libro.titulo}</h3>
@@ -887,7 +945,10 @@
             if (btnDescarga) btnDescarga.addEventListener('click', () => abrirModalDescarga(libro));
             contenedor.appendChild(card);
         });
-        
+
+        // Recupera únicamente las portadas de los libros visibles y las aplica al terminar la consulta.
+        cargarPortadasFirestore(librosPagina);
+
         actualizarBotonesPaginacion();
     }
 
