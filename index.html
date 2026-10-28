@@ -1169,14 +1169,20 @@
     }
 
     // --- DEBOUNCE (RETRASO INTELIGENTE) EN BÚSQUEDA ---
-    document.getElementById('buscador-libros').addEventListener('input', (e) => {
+    function ejecutarBusquedaCatalogo() {
         clearTimeout(timeoutBusqueda);
         timeoutBusqueda = setTimeout(() => {
-            const texto = e.target.value;
+            const texto = document.getElementById('buscador-libros').value;
             const filtro = document.getElementById('filtro-libros').value;
+            document.getElementById('catalogo-titulo').textContent = texto.trim()
+                ? 'Resultados en toda la biblioteca'
+                : (carreraCatalogoActual ? 'Catálogo - ' + carreraCatalogoActual : 'Catálogo');
             mostrarLibros(carreraCatalogoActual, texto, filtro, true);
-        }, 300); // Espera 300ms después de que el usuario deje de teclear
-    });
+        }, 300);
+    }
+
+    document.getElementById('buscador-libros').addEventListener('input', ejecutarBusquedaCatalogo);
+    document.getElementById('filtro-libros').addEventListener('change', ejecutarBusquedaCatalogo);
 
     function abrirSimuladores(facultadMap) {
         document.getElementById('simuladores-titulo').textContent = 'Simuladores - ' + facultadMap;
