@@ -1115,7 +1115,14 @@
 
       try {
         const idToken = await user.getIdToken(true);
-        const sessionId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        const sessionId = (window.crypto && crypto.randomUUID)
+          ? crypto.randomUUID()
+          : (() => {
+              const bytes = new Uint8Array(16);
+              window.crypto.getRandomValues(bytes);
+              const hex = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+              return `${Date.now()}-${hex}`;
+            })();
         const payload = { idToken, tipoAcceso, sessionId, pagina: location.href, userAgent: navigator.userAgent || '', plataforma: navigator.platform || '', idioma: navigator.language || '', fechaCliente: new Date().toISOString() };
 
         const frameName = `unida_alerta_frame_${Date.now()}`;
