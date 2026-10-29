@@ -2361,12 +2361,12 @@
         `;
       });
     }
-
-  /* RENDER DE GRÁFICOS PRINCIPALES CON CANVAS GRADIENTS DE ALTO IMPACTO */
+let carreraSeleccionadaGrafico = null;
+  /* RENDER DE GRÁFICOS PRINCIPALES INTERACTIVOS */
     function renderGraficos() {
       const isDark = document.documentElement.classList.contains('dark');
 
-      // 1. Libros por Carrera (Donut PRO - Agrupando en Top 5 + Otros)
+      // 1. Conteo y ordenamiento de carreras
       const conteoRaw = {};
       libros.filter(l => l.carrera !== 'PPT').forEach(l => {
         const c = l.carrera || 'Sin especificar';
@@ -2396,6 +2396,15 @@
 
       const cyberPalette = ['#06b6d4', '#3b82f6', '#8b5cf6', '#ec4899', '#10b981', '#64748b'];
 
+      // Asignar color activo o atenuar el resto si hay una carrera seleccionada
+      const bgColors = labelsDonut.map((label, idx) => {
+        if (!carreraSeleccionadaGrafico || carreraSeleccionadaGrafico === label) {
+          return cyberPalette[idx % cyberPalette.length];
+        } else {
+          return isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.08)';
+        }
+      });
+
       if (chartCarrerasInst) chartCarrerasInst.destroy();
       const ctx1 = document.getElementById('chartCarreras');
       if (ctx1) {
@@ -2405,10 +2414,10 @@
             labels: labelsDonut,
             datasets: [{
               data: dataDonut,
-              backgroundColor: cyberPalette.slice(0, labelsDonut.length),
+              backgroundColor: bgColors,
               borderWidth: 2,
               borderColor: isDark ? '#070a11' : '#ffffff',
-              hoverOffset: 6,
+              hoverOffset: 12,
               borderRadius: 4
             }]
           },
@@ -2416,9 +2425,47 @@
             responsive: true,
             maintainAspectRatio: false,
             cutout: '74%',
+            // Evento al hacer clic directo en una rebanada de la dona
+            onClick: (evt, activeElements) => {
+              if (activeElements.length > 0) {
+                const index = activeElements[0].index;
+                const carreraClickeada = labelsDonut[index];
+
+                // Alternar selección: si hace clic en la misma, resetea la vista
+                carreraSeleccionadaGrafico = (carreraSeleccionadaGrafico === carreraClickeada) ? null : carreraClickeada;
+
+                // Filtrar la tabla de inventario
+                const selCarreraTabla = document.getElementById('filtro-carrera');
+                if (selCarreraTabla) {
+                  selCarreraTabla.value = (carreraSeleccionadaGrafico && carreraSeleccionadaGrafico !== 'Otras Carreras') ? carreraSeleccionadaGrafico : '';
+                  if (typeof reiniciarPaginacion === 'function') reiniciarPaginacion();
+                  if (typeof filtrarTabla === 'function') filtrarTabla();
+                }
+
+                renderGraficos();
+              }
+            },
+            // Cambiar el cursor a mano al pasar el ratón por encima
+            onHover: (evt, activeElements) => {
+              evt.chart.canvas.style.cursor = activeElements.length ? 'pointer' : 'default';
+            },
             plugins: {
               legend: {
                 position: 'right',
+                // Evento al hacer clic en un elemento de la leyenda lateral
+                onClick: (e, legendItem) => {
+                  const carreraClickeada = labelsDonut[legendItem.index];
+                  carreraSeleccionadaGrafico = (carreraSeleccionadaGrafico === carreraClickeada) ? null : carreraClickeada;
+
+                  const selCarreraTabla = document.getElementById('filtro-carrera');
+                  if (selCarreraTabla) {
+                    selCarreraTabla.value = (carreraSeleccionadaGrafico && carreraSeleccionadaGrafico !== 'Otras Carreras') ? carreraSeleccionadaGrafico : '';
+                    if (typeof reiniciarPaginacion === 'function') reiniciarPaginacion();
+                    if (typeof filtrarTabla === 'function') filtrarTabla();
+                  }
+
+                  renderGraficos();
+                },
                 labels: {
                   color: isDark ? '#cbd5e1' : '#64748b',
                   font: { size: 11, family: "'Poppins', sans-serif", weight: '500' },
@@ -2450,7 +2497,7 @@
         });
       }
 
-      // 2. Distribución por Facultad (Bar Chart con Linear Gradient)
+      // 2. Distribución por Facultad (Gráfico de Barras)
       const fac = { "Salud":0, "Ingeniería":0, "Gestión":0, "Jurídicas":0, "FEADYS":0 };
       libros.filter(l => l.carrera !== 'PPT').forEach(l => {
         const fm = MAPA_FACULTADES[l.carrera];
