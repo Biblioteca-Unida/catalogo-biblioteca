@@ -1795,11 +1795,21 @@
         prevTitulo.appendChild(spanEdicion);
       }
       document.getElementById('prev-autor').textContent = autor;
-      document.getElementById('prev-img').src = sanitizarHref(imagen);
+      document.getElementById('prev-img').src = sanitizarSrcImagen(imagen);
       document.getElementById('prev-link').href = sanitizarHref(link);
     }
 
     function textoPlano(v='') { return String(v ?? '').trim(); }
+    function sanitizarSrcImagen(v='') {
+      const raw = textoPlano(v);
+      if (!raw) return 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=300&q=80';
+      try {
+        const u = new URL(raw, window.location.origin);
+        return (u.protocol === 'http:' || u.protocol === 'https:') ? u.href : 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=300&q=80';
+      } catch (_) {
+        return 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=300&q=80';
+      }
+    }
     function sanitizarHref(v='') {
       const raw = textoPlano(v);
       if (!raw) return '#';
