@@ -1795,7 +1795,7 @@
         prevTitulo.appendChild(spanEdicion);
       }
       document.getElementById('prev-autor').textContent = autor;
-      document.getElementById('prev-img').src = imagen;
+      document.getElementById('prev-img').src = sanitizarHref(imagen);
       document.getElementById('prev-link').href = sanitizarHref(link);
     }
 
