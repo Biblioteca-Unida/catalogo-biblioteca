@@ -2032,6 +2032,10 @@
 
     const CLUB_PORTADA_DEFAULT = "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=600&q=80";
 
+    function sanitizeText(input) {
+      return String(input || '').replace(/[<>]/g, '');
+    }
+
     function materialesClub() { return libros.filter(l => l.carrera === 'PPT'); }
 
     async function guardarMaterialClub(e) {
@@ -2061,7 +2065,7 @@
       const m = libros.find(l => l._id === docId);
       if (!m) return;
       document.getElementById('club-edit-id').value = m._id || '';
-      document.getElementById('club-titulo').value = (m.titulo || '').replace(/<[^>]*>/g, '').trim();
+      document.getElementById('club-titulo').value = sanitizeText(m.titulo).trim();
       document.getElementById('club-autor').value = m.autor || '';
       document.getElementById('club-link').value = m.link || '';
       document.getElementById('club-imagen').value = m.imagen === CLUB_PORTADA_DEFAULT ? '' : (m.imagen || '');
@@ -2072,7 +2076,7 @@
     async function eliminarMaterialClub(docId) {
       const m = libros.find(l => l._id === docId);
       if (!m) return;
-      if (!confirm(`¿Eliminar del Club de Lectura: ${m.titulo.replace(/<[^>]*>/g, '')}?`)) return;
+      if (!confirm(`¿Eliminar del Club de Lectura: ${sanitizeText(m.titulo)}?`)) return;
       if (db && m._id) { await db.collection('libros').doc(m._id).delete(); await registrarAuditoria('eliminar','club',m._id,m.titulo); }
       else {
         const idx = libros.findIndex(l => l._id === docId);
