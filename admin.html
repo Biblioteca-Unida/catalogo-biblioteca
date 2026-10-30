@@ -2100,7 +2100,12 @@
         return;
       }
       mats.forEach(m => {
-        const safeTitle = (m.titulo || '').replace(/<[^>]*>/g, '');
+        const safeTitle = (m.titulo || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
         const id = m._id || '';
         box.innerHTML += `
           <div class="flex items-center gap-4 p-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800/40">
