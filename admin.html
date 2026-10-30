@@ -1799,7 +1799,7 @@
       document.getElementById('prev-link').href = link;
     }
 
-    function textoPlano(v='') { const d=document.createElement('div'); d.innerHTML=v||''; return (d.textContent||'').trim(); }
+    function textoPlano(v='') { return String(v ?? '').trim(); }
     function normalizarClave(v='') { return textoPlano(v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim(); }
     function usuarioActual() { const u=firebase.apps.length ? firebase.auth().currentUser : null; return u ? {uid:u.uid,email:u.email||'Administrador'} : {uid:'local',email:'Modo local'}; }
     
