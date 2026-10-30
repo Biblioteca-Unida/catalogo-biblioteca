@@ -1796,10 +1796,21 @@
       }
       document.getElementById('prev-autor').textContent = autor;
       document.getElementById('prev-img').src = imagen;
-      document.getElementById('prev-link').href = link;
+      document.getElementById('prev-link').href = sanitizarHref(link);
     }
 
     function textoPlano(v='') { return String(v ?? '').trim(); }
+    function sanitizarHref(v='') {
+      const raw = textoPlano(v);
+      if (!raw) return '#';
+      if (raw.startsWith('/')) return raw;
+      try {
+        const u = new URL(raw, window.location.origin);
+        return (u.protocol === 'http:' || u.protocol === 'https:') ? u.href : '#';
+      } catch (_) {
+        return '#';
+      }
+    }
     function normalizarClave(v='') { return textoPlano(v).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim(); }
     function usuarioActual() { const u=firebase.apps.length ? firebase.auth().currentUser : null; return u ? {uid:u.uid,email:u.email||'Administrador'} : {uid:'local',email:'Modo local'}; }
     
