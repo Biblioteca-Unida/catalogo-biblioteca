@@ -1778,16 +1778,22 @@
 
     function actualizarPreview() {
       const carrera = document.getElementById('inp-carrera').value;
-      let titulo = document.getElementById('inp-titulo').value || 'TÍTULO DEL LIBRO';
+      const titulo = document.getElementById('inp-titulo').value || 'TÍTULO DEL LIBRO';
       const edicion = document.getElementById('inp-edicion').value;
       const autor = document.getElementById('inp-autor').value || 'Nombre del Autor';
       const imagen = document.getElementById('inp-imagen').value || 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=300&q=80';
       const link = document.getElementById('inp-link').value || '#';
 
-      if (edicion.trim()) titulo += ` <span class="text-[10px] text-slate-400">(${edicion})</span>`;
-
       document.getElementById('prev-carrera').textContent = carrera;
-      document.getElementById('prev-titulo').innerHTML = titulo;
+      const prevTitulo = document.getElementById('prev-titulo');
+      prevTitulo.textContent = titulo;
+      if (edicion.trim()) {
+        const spanEdicion = document.createElement('span');
+        spanEdicion.className = 'text-[10px] text-slate-400';
+        spanEdicion.textContent = `(${edicion})`;
+        prevTitulo.appendChild(document.createTextNode(' '));
+        prevTitulo.appendChild(spanEdicion);
+      }
       document.getElementById('prev-autor').textContent = autor;
       document.getElementById('prev-img').src = imagen;
       document.getElementById('prev-link').href = link;
