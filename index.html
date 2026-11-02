@@ -177,6 +177,97 @@
         .impresa-nuevos-titulo { color: white; font-size: .78rem; font-weight: 700; margin-bottom: 6px; }
         .impresa-nuevo-link { display: block; padding: 7px 9px; border-radius: 6px; margin: 5px 0; background: #2980b9; color: #fff; font-size: .72rem; text-decoration: none; overflow-wrap: anywhere; }
         .impresa-nuevo-link:hover { background: #3498db; }
+
+        /* =============================================================
+           UNIDA - Adaptación responsive para tablets y celulares
+           No altera la lógica de Firebase ni los catálogos.
+           ============================================================= */
+        *, *::before, *::after { box-sizing: border-box; }
+        img, video, iframe { max-width: 100%; }
+        .libro-info, .catalogo-titulo-contenedor, .header-text { min-width: 0; }
+        .libro-title, .libro-author, .libro-carrera, .catalogo-header h2 { overflow-wrap: anywhere; }
+
+        @media (max-width: 1024px) {
+            header { padding: 18px 20px; gap: 15px; }
+            header h1 { font-size: clamp(1.1rem, 2.7vw, 1.9rem); white-space: normal; }
+            header .biblioteca-text { font-size: clamp(1.15rem, 2.5vw, 1.65rem); }
+            header .nombre-honorifico { font-size: clamp(.85rem, 1.8vw, 1.25rem); }
+            .logo-unida { height: 44px; }
+            .logo-biblioteca { height: 70px; }
+            .container { margin: 24px auto; padding: 0 18px; }
+            .facultades-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+            .facultad-card { height: 390px; }
+            .facultad-card h2 { font-size: 1.6rem; }
+            .facultad-card .overlay { padding: 18px; }
+            .carreras-list, .btn-simulador { opacity: 1; transform: none; }
+            .catalogo-header { padding: 20px; }
+            .catalogo-header h2 { font-size: 1.5rem; }
+            .libro-action { min-width: 170px; }
+            .libro-title { font-size: 1.15rem; }
+        }
+
+        @media (max-width: 700px) {
+            header { flex-wrap: wrap; justify-content: center; padding: 15px 12px; gap: 8px 14px; }
+            .logo-unida { height: 36px; order: 1; }
+            .logo-biblioteca { height: 49px; order: 2; }
+            .header-text { order: 3; flex: 0 0 100%; padding: 0 3px; }
+            header h1 { font-size: clamp(.92rem, 4vw, 1.35rem); line-height: 1.25; }
+            header .biblioteca-text { font-size: 1.2rem; margin: 6px 0 2px; }
+            header .nombre-honorifico { font-size: .88rem; line-height: 1.35; }
+            nav { padding: 12px 8px; }
+            nav a { margin: 0 8px; font-size: .78rem; }
+            .container { padding: 0 12px; margin: 18px auto; }
+            .hero-library { padding: 55px 18px 75px; border-radius: 0 0 24px 24px; background-attachment: scroll; }
+            .hero-library h2 { font-size: clamp(1.8rem, 8vw, 2.7rem); line-height: 1.15; }
+            .hero-library p { font-size: .92rem; line-height: 1.55; }
+            .quick-actions-minimal { grid-template-columns: minmax(0, 1fr); gap: 14px; margin-top: -40px; }
+            .minimal-card { padding: 24px 20px; border-radius: 14px; }
+            .minimal-card h3 { font-size: 1.4rem; }
+            .minimal-card p { font-size: .87rem; }
+            .facultades-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+            .facultad-card, .facultad-card-feadys { height: auto; min-height: 340px; }
+            .facultad-card img { position: absolute; inset: 0; }
+            .facultad-card .overlay { position: relative; inset: auto; min-height: 340px; padding: 22px 16px; }
+            .facultad-card h2 { font-size: clamp(1.3rem, 6vw, 1.85rem); }
+            .carreras-list { opacity: 1; transform: none; margin-top: 14px; font-size: .88rem; }
+            .carreras-list li { padding: 7px 3px; min-height: 32px; }
+            .carreras-list-feadys { grid-template-columns: minmax(0, 1fr); font-size: .83rem !important; }
+            .facultad-card-feadys .overlay { min-height: 0; }
+            .btn-simulador { opacity: 1; transform: none; margin-top: 16px; padding: 12px 16px; min-height: 44px; }
+            .catalogo-header { flex-direction: column; align-items: stretch; padding: 16px; gap: 16px; }
+            .catalogo-titulo-contenedor { flex-direction: column; align-items: stretch; gap: 12px; }
+            .catalogo-header h2 { font-size: clamp(1.15rem, 5.2vw, 1.6rem); line-height: 1.25; }
+            .btn-volver { align-self: flex-start; min-height: 44px; }
+            .search-controls { max-width: none; width: 100%; flex-direction: column; gap: 10px; }
+            .filter-select, .search-bar { width: 100%; min-width: 0; min-height: 46px; font-size: 16px; }
+            .libros-list { padding: 14px; min-height: 200px; }
+            .libros-grid-container { gap: 14px; }
+            .libro-card { padding: 16px; flex-direction: column; align-items: stretch; gap: 12px; }
+            .libro-cover { width: 100px; height: 145px; margin: 0 auto; }
+            .libro-info { width: 100%; text-align: center; }
+            .libro-title { font-size: 1.08rem; line-height: 1.4; }
+            .libro-author { font-size: .9rem; line-height: 1.5; }
+            .libro-carrera { font-size: .8rem; }
+            .libro-action { width: 100%; min-width: 0; margin: 0; }
+            .btn-drive-download { min-height: 46px; width: 100%; padding: 12px; font-size: .86rem; }
+            .paginacion-container { gap: 8px; flex-wrap: wrap; }
+            .btn-pag { min-height: 42px; padding: 10px 12px; font-size: .8rem; }
+            .pag-info { font-size: .8rem; }
+            .social-sidebar { right: 12px; bottom: 12px; gap: 9px; }
+            .social-sidebar a { width: 42px; height: 42px; font-size: 1.1rem; }
+            .download-box { padding: 26px 18px; }
+            .btn-download { max-width: 100%; padding: 14px 18px; }
+            .catalogo-impreso-intro { padding: 16px; }
+            .catalogo-impreso-link { flex-wrap: wrap; }
+        }
+
+        @media (max-width: 380px) {
+            .container { padding: 0 9px; }
+            .libros-list { padding: 10px; }
+            .libro-card { padding: 12px; }
+            .facultad-card .overlay { padding: 18px 12px; }
+            .pag-info { width: 100%; text-align: center; order: -1; }
+        }
     </style>
 </head>
 <body>
@@ -1184,35 +1275,89 @@
     document.getElementById('buscador-libros').addEventListener('input', ejecutarBusquedaCatalogo);
     document.getElementById('filtro-libros').addEventListener('change', ejecutarBusquedaCatalogo);
 
-    function abrirSimuladores(facultadMap) {
-        document.getElementById('simuladores-titulo').textContent = 'Simuladores - ' + facultadMap;
+    // Simuladores: consulta puntual al abrir la facultad, sin listeners permanentes.
+    // La caché se usa solo si Firestore falla; una respuesta vacía de la nube es válida.
+    let solicitudSimuladoresActual = 0;
+
+    function renderizarSimuladores(facultadMap, simuladores, aviso = '') {
         const contenedor = document.getElementById('contenedor-simuladores');
-        contenedor.innerHTML = '';
-
-        const simsFiltrados = (window.simuladoresGlobales || []).filter(s => s.facultad === facultadMap);
-
-        if (simsFiltrados.length === 0) {
-            contenedor.innerHTML = `<div style="text-align: center; padding: 40px; color: #666;">No hay simuladores activos para esta facultad actualmente.</div>`;
-        } else {
-            simsFiltrados.forEach(s => {
-                const card = document.createElement('div');
-                card.className = 'libro-card simulador-card';
-                card.innerHTML = `
-                    <div class="libro-cover simulador-cover"><i class="fas fa-laptop-code"></i></div>
-                    <div class="libro-info">
-                        <h3 class="libro-title">${s.titulo}</h3>
-                        <p class="libro-author">${s.autor}</p>
-                    </div>
-                    <div class="libro-action">
-                        <a href="${s.link}" target="_blank" class="btn-drive-download btn-simular">
-                            <i class="fas fa-external-link-alt"></i> Acceder
-                        </a>
-                    </div>
-                `;
-                contenedor.appendChild(card);
-            });
+        contenedor.replaceChildren();
+        if (aviso) {
+            const nota = document.createElement('p');
+            nota.style.cssText = 'text-align:center;color:#9a6700;padding:12px;';
+            nota.textContent = aviso;
+            contenedor.appendChild(nota);
         }
+        const filtrados = simuladores.filter(s => s.facultad === facultadMap);
+        if (!filtrados.length) {
+            const vacio = document.createElement('div');
+            vacio.style.cssText = 'text-align:center;padding:40px;color:#666;';
+            vacio.textContent = aviso
+                ? 'No hay simuladores guardados en este dispositivo para esta facultad.'
+                : 'No hay simuladores activos para esta facultad actualmente.';
+            contenedor.appendChild(vacio);
+            return;
+        }
+        filtrados.forEach(s => {
+            const card = document.createElement('div');
+            card.className = 'libro-card simulador-card';
+            const portada = document.createElement('div');
+            portada.className = 'libro-cover simulador-cover';
+            portada.innerHTML = '<i class="fas fa-laptop-code"></i>';
+            const info = document.createElement('div');
+            info.className = 'libro-info';
+            const titulo = document.createElement('h3');
+            titulo.className = 'libro-title';
+            titulo.textContent = s.titulo || 'Simulador';
+            const autor = document.createElement('p');
+            autor.className = 'libro-author';
+            autor.textContent = s.autor || '';
+            info.append(titulo, autor);
+            const accion = document.createElement('div');
+            accion.className = 'libro-action';
+            const enlace = document.createElement('a');
+            enlace.className = 'btn-drive-download btn-simular';
+            enlace.target = '_blank';
+            enlace.rel = 'noopener noreferrer';
+            const url = String(s.link || '').trim();
+            if (/^https?:\/\//i.test(url)) {
+                enlace.href = url;
+                enlace.innerHTML = '<i class="fas fa-external-link-alt"></i> Acceder';
+            } else {
+                enlace.removeAttribute('href');
+                enlace.textContent = 'Enlace no disponible';
+            }
+            accion.appendChild(enlace);
+            card.append(portada, info, accion);
+            contenedor.appendChild(card);
+        });
+    }
+
+    async function abrirSimuladores(facultadMap) {
+        const solicitud = ++solicitudSimuladoresActual;
+        document.getElementById('simuladores-titulo').textContent = 'Simuladores - ' + facultadMap;
         showSection('simuladores');
+        const contenedor = document.getElementById('contenedor-simuladores');
+        contenedor.textContent = 'Cargando simuladores desde Firebase…';
+        try {
+            if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+            if (!db) db = firebase.firestore();
+            const snapshot = await db.collection('simuladores').get({ source: 'server' });
+            if (solicitud !== solicitudSimuladoresActual) return;
+            const datos = snapshot.docs.map(doc => ({ _id: doc.id, ...doc.data() }));
+            window.simuladoresGlobales = datos;
+            guardarCacheSeguro(SIMULADORES_CACHE_KEY, datos);
+            renderizarSimuladores(facultadMap, datos);
+            console.info(`[UNIDA] Simuladores actualizados desde Firestore: ${datos.length}.`);
+        } catch (error) {
+            if (solicitud !== solicitudSimuladoresActual) return;
+            console.error('[UNIDA] Error al consultar simuladores:', error);
+            renderizarSimuladores(
+                facultadMap,
+                window.simuladoresGlobales || [],
+                'No se pudo consultar Firebase. Se muestran datos guardados anteriormente, si existen.'
+            );
+        }
     }
 
     // Mostrar el catálogo local inmediatamente para no depender de Firestore
