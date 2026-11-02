@@ -689,6 +689,11 @@
     const DESCARGA_STORAGE_KEY = 'unida_datos_descarga_v1';
     const CATALOGO_CACHE_KEY = 'unida_catalogo_global';
     const SIMULADORES_CACHE_KEY = 'unida_simuladores_global';
+    const LIBROS_INCREMENTALES_KEY = 'unida_libros_incrementales_v1';
+    const LIBROS_SYNC_KEY = 'unida_libros_sync_marca_v1';
+    // Punto de partida: solo los libros que el ADMIN marque a partir de esta actualización.
+    const LIBROS_SYNC_INICIO = '2026-11-02T00:00:00.000Z';
+    let librosIncrementales = [];
 
     // Alias de carreras: permite mostrar registros antiguos de Firebase bajo el nombre actualizado.
     const ALIAS_CARRERAS = {
@@ -725,6 +730,7 @@
             try { localStorage.removeItem(SIMULADORES_CACHE_KEY); } catch (_) {}
         }
 
+        cargarLibrosIncrementalesCache();
         console.info(`[UNIDA] Catálogo inmediato: ${window.catalogoLibros.length} libros desde ${origenCatalogo}.`);
     }
 
@@ -736,12 +742,84 @@
         }
     }
 
+    // Solo se guardan metadatos ligeros; nunca las imágenes Base64 en localStorage.
+    function libroLigero(datos, id) {
+        return {
+            _id: id, titulo: datos.titulo || '', autor: datos.autor || '',
+            carrera: datos.carrera || '', link: datos.link || '',
+            imagen: (typeof datos.imagen === 'string' && !datos.imagen.startsWith('data:')) ? datos.imagen : ''
+        };
+    }
+
+    function combinarCatalogoIncremental() {
+        const base = (typeof catalogoLibros !== 'undefined' && Array.isArray(catalogoLibros))
+            ? [...catalogoLibros] : [];
+        const porId = new Map();
+        base.forEach((libro, i) => {
+            const clave = String(libro.link || '').trim() || `estatico-${i}`;
+            porId.set(clave, libro);
+        });
+        librosIncrementales.forEach(libro => {
+            const clave = String(libro.link || '').trim() || `firebase-${libro._id}`;
+            porId.set(clave, libro);
+        });
+        window.catalogoLibros = [...porId.values()];
+    }
+
+    function cargarLibrosIncrementalesCache() {
+        try {
+            const guardados = JSON.parse(localStorage.getItem(LIBROS_INCREMENTALES_KEY) || '[]');
+            if (Array.isArray(guardados)) librosIncrementales = guardados;
+            combinarCatalogoIncremental();
+        } catch (error) {
+            console.warn('[UNIDA] Caché incremental no disponible:', error);
+        }
+    }
+
+    async function sincronizarLibrosIncrementales() {
+        if (!db) return;
+        try {
+            const ultimaMarca = localStorage.getItem(LIBROS_SYNC_KEY) || LIBROS_SYNC_INICIO;
+            // Consulta por rango indexado: no vuelve a descargar los 1.164 libros antiguos.
+            // Se usa >= y se deduplica para no perder registros con marcas iguales.
+            const snap = await db.collection('libros')
+                .where('catalogoActualizadoEn', '>=', firebase.firestore.Timestamp.fromDate(new Date(ultimaMarca)))
+                .orderBy('catalogoActualizadoEn', 'asc').get({ source: 'server' });
+            if (snap.empty) return;
+            const porId = new Map(librosIncrementales.map(l => [l._id, l]));
+            let nuevaMarca = ultimaMarca;
+            snap.forEach(doc => {
+                const datos = doc.data() || {};
+                if (!datos.titulo || !datos.carrera) return;
+                porId.set(doc.id, libroLigero(datos, doc.id));
+                const fecha = datos.catalogoActualizadoEn?.toDate?.();
+                if (fecha && fecha.toISOString() > nuevaMarca) nuevaMarca = fecha.toISOString();
+            });
+            const actualizados = [...porId.values()];
+            // Guardar primero el contenido y luego la marca: evita perder cambios si falla el almacenamiento.
+            localStorage.setItem(LIBROS_INCREMENTALES_KEY, JSON.stringify(actualizados));
+            librosIncrementales = actualizados;
+            localStorage.setItem(LIBROS_SYNC_KEY, nuevaMarca);
+            combinarCatalogoIncremental();
+            const seccion = document.getElementById('catalogo-section');
+            if (seccion && getComputedStyle(seccion).display !== 'none') {
+                if (typeof ejecutarBusquedaCatalogo === 'function') ejecutarBusquedaCatalogo();
+                else mostrarLibros(carreraCatalogoActual);
+            }
+            console.info(`[UNIDA] Catálogo sincronizado: ${librosIncrementales.length} registros incrementales.`);
+        } catch (error) {
+            console.warn('[UNIDA] No se pudo sincronizar el catálogo incremental; se mantiene el catálogo local:', error);
+        }
+    }
+
     async function inicializarDatosCloud() {
         try {
             // Inicializar Firebase sin descargar colecciones automáticamente.
             // El catálogo público se carga primero desde catalogo.js.
             if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
             db = firebase.firestore();
+            // No bloquea el render inicial: sincroniza las novedades en segundo plano.
+            sincronizarLibrosIncrementales();
 
             console.info(
                 '[UNIDA] Firebase inicializado sin lecturas automáticas. ' +
