@@ -12,7 +12,6 @@
     tailwind.config = {
       darkMode: 'class',
       theme: {
-  <link rel="icon" type="image/png" sizes="512x512" href="favicon-biblioteca.png">
         extend: {
           colors: {
             unida: { navy: '#0f172a', blue: '#3b82f6', cyan: '#06b6d4', orange: '#f97316', dark: '#070a11' }
@@ -1997,13 +1996,16 @@
         titulo: titulo,
         autor: document.getElementById('inp-autor').value.trim(),
         imagen: document.getElementById('inp-imagen').value.trim() || PORTADAS_PRESET[document.getElementById('inp-carrera').value],
-        link: document.getElementById('inp-link').value.trim()
+        link: document.getElementById('inp-link').value.trim(),
+        // Marca incremental: permite que el sitio público detecte altas y ediciones.
+        catalogoActualizadoEn: firebase.firestore.FieldValue.serverTimestamp()
       };
 
       if (db) {
         if (docId) { await db.collection("libros").doc(docId).update(libroObj); await registrarAuditoria('editar','libro',docId,libroObj.titulo,{carrera:libroObj.carrera}); }
         else { const ref=await db.collection("libros").add(libroObj); await registrarAuditoria('crear','libro',ref.id,libroObj.titulo,{carrera:libroObj.carrera}); }
       } else {
+        delete libroObj.catalogoActualizadoEn;
         if (docId) {
           const idx = libros.findIndex(l => l._id === docId);
           if (idx >= 0) libros[idx] = libroObj;
