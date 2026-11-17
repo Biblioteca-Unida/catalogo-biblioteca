@@ -4,15 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Panel Administrativo Cloud - UNIDA</title>
-  <link rel="icon" type="image/png" sizes="512x512" href="favicon-biblioteca.png">
+
   
+  <link rel="icon" type="image/png" sizes="512x512" href="favicon-biblioteca.png">
+
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
       theme: {
-  <link rel="icon" type="image/png" sizes="512x512" href="favicon-biblioteca.png">
+
         extend: {
           colors: {
             unida: { navy: '#0f172a', blue: '#3b82f6', cyan: '#06b6d4', orange: '#f97316', dark: '#070a11' }
@@ -32,8 +34,6 @@
   
   <!-- Librerías de Datos y Gráficos CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
 
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -64,7 +64,7 @@
       --g-border: rgba(255,255,255,.85);
       --g-line: rgba(15,23,42,.1);
       --g-shadow: 0 10px 30px rgba(0,0,0,.08);
-      --g-blur: blur(24px) saturate(180%);
+      --g-blur: blur(8px) saturate(130%);
       --g-text: #0f172a;
       --g-muted: #64748b;
     }
@@ -87,7 +87,7 @@
         radial-gradient(circle at 15% 85%, rgba(6, 182, 212, 0.1) 0%, transparent 45%),
         radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px) 0 0 / 24px 24px,
         linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 100%) !important;
-      background-attachment: fixed !important;
+      background-attachment: scroll !important;
     }
     html.dark body.bg-slate-100 {
       background:
@@ -96,7 +96,7 @@
         radial-gradient(circle at 10% 80%, rgba(6, 182, 212, 0.12) 0%, transparent 50%),
         radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px) 0 0 / 28px 28px,
         linear-gradient(180deg, #070a11 0%, #0b0f19 100%) !important;
-      background-attachment: fixed !important;
+      background-attachment: scroll !important;
     }
 
     /* Superficies de Vidrio Esmerilado */
@@ -225,6 +225,7 @@
       function temaCharts() {
         if (typeof Chart === 'undefined') return;
         var oscuro = document.documentElement.classList.contains('dark');
+        Chart.defaults.animation = false;
         Chart.defaults.color = oscuro ? 'rgba(226, 232, 240, 0.75)' : '#475569';
         Chart.defaults.borderColor = oscuro ? 'rgba(255, 255, 255, 0.06)' : 'rgba(15, 23, 42, 0.08)';
         Chart.defaults.font.family = "'JetBrains Mono', 'Poppins', sans-serif";
@@ -1189,6 +1190,11 @@
       const activo = boton || [...document.querySelectorAll('.nav-btn')].find(b => (b.getAttribute('onclick') || '').includes(`'${id}'`));
       if (activo) activo.className = "nav-btn w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition text-[#1e3c6e] bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400";
 
+      if (id === 'tab-metricas') { renderGraficos(); }
+      if (id === 'tab-libros') { actualizarFiltroCarreras(); filtrarTabla(); }
+      if (id === 'tab-auditoria') renderAuditoriaCalidad();
+      if (id === 'tab-simuladores') renderSimuladores();
+      if (id === 'tab-club') renderClub();
       if (id === 'tab-historial') inicializarAuditoriaBajoDemanda();
       if (id === 'tab-descargas') inicializarDescargasBajoDemanda();
       if (id === 'tab-seguridad') inicializarSeguridadBajoDemanda();
@@ -1267,7 +1273,8 @@
         unsubscribeSimuladores = db.collection('simuladores').onSnapshot(snapshot => {
           simuladores = [];
           snapshot.forEach(doc => { simuladores.push({ _id: doc.id, ...doc.data() }); });
-          renderSimuladores();
+          document.getElementById('kpi-simuladores').textContent = simuladores.length;
+          if (pestanaVisible('tab-simuladores')) renderSimuladores();
         });
       } catch (e) {
         firebaseDataInicializada = false;
@@ -1318,7 +1325,7 @@
         asegurarFirebase();
         unsubscribeDescargas = db.collection('descargas').orderBy('fecha', 'desc').onSnapshot(snapshot => {
           descargas = [];
-          snapshot.forEach(doc => descargas.push({ _id: doc.id, ...doc.data() }));
+          snapshot.forEach(doc => { const d = doc.data(); descargas.push({ _id: doc.id, ...d, tituloLibro: tituloPlano(d.tituloLibro) }); });
           actualizarFiltroCarrerasDescargas();
           renderDescargas();
           if (estado) estado.textContent = `Sincronizado con Firestore · ${snapshot.size} registros`;
@@ -1352,7 +1359,7 @@
     }
 
     function contarPor(arr, getter) {
-      const out = {};
+      const out = Object.create(null);
       arr.forEach(x => {
         const k = String(getter(x) || 'Sin especificar').trim() || 'Sin especificar';
         out[k] = (out[k] || 0) + 1;
@@ -1414,7 +1421,7 @@
         return d && d.getFullYear() === hoy.getFullYear() && d.getMonth() === hoy.getMonth() && d.getDate() === hoy.getDate();
       }).length;
       const usuarios = new Set(descargas.map(claveUsuarioDescarga).filter(Boolean));
-      const porLibro = contarPor(descargas, d => textoPlano(d.tituloLibro || 'Sin título'));
+      const porLibro = contarPor(descargas, d => tituloPlano(d.tituloLibro || 'Sin título'));
       const porCarrera = contarPor(descargas, d => d.carreraLibro || 'Sin especificar');
       const [topLibro, topLibroN] = mayorConteo(porLibro);
       const [topCarrera, topCarreraN] = mayorConteo(porCarrera);
@@ -1442,19 +1449,23 @@
           <td class="p-3">${escapeHtml(d.correo || '-')}</td>
           <td class="p-3">${escapeHtml(d.ocupacion || '-')}</td>
           <td class="p-3">${escapeHtml(d.carrera || '-')}</td>
-          <td class="p-3 font-semibold max-w-[300px]">${escapeHtml(textoPlano(d.tituloLibro || '-'))}<div class="text-[10px] font-normal text-slate-400 mt-0.5">${escapeHtml(d.autorLibro || '')}</div></td>
+          <td class="p-3 font-semibold max-w-[300px]">${escapeHtml(tituloPlano(d.tituloLibro || '-'))}<div class="text-[10px] font-normal text-slate-400 mt-0.5">${escapeHtml(d.autorLibro || '')}</div></td>
           <td class="p-3">${escapeHtml(d.carreraLibro || '-')}</td>
         </tr>`).join('');
     }
 
     /* RENDER DE GRÁFICOS DE DESCARGAS CON CANVAS GRADIENTS Y GLOW */
+    let firmaGraficosDescargas = null;
     function renderGraficosDescargas(porCarrera, porLibro) {
       const carreraEntries = Object.entries(porCarrera).sort((a,b)=>b[1]-a[1]).slice(0,10);
-      const libroEntries = Object.entries(porLibro).sort((a,b)=>b[1]-a[1]).slice(0,8).reverse();
+      const libroEntries = Object.entries(porLibro).sort((a,b)=>b[1]-a[1]).slice(0,10);
       
       const c1 = document.getElementById('chartDescargasCarrera');
       const c2 = document.getElementById('chartDescargasLibros');
       
+      const firma = JSON.stringify([carreraEntries, libroEntries, document.documentElement.classList.contains('dark')]);
+      if (firma === firmaGraficosDescargas && chartDescargasCarreraInst && chartDescargasLibrosInst) return;
+      firmaGraficosDescargas = firma;
       if (chartDescargasCarreraInst) chartDescargasCarreraInst.destroy();
       if (chartDescargasLibrosInst) chartDescargasLibrosInst.destroy();
 
@@ -1505,10 +1516,24 @@
       }
     }
 
+    // Carga diferida de ExcelJS, compartida entre exportaciones.
+    let promesaExcelJS = null;
+    function cargarExcelJS() {
+      if (typeof ExcelJS !== 'undefined') return Promise.resolve();
+      if (!promesaExcelJS) promesaExcelJS = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
+        script.onload = () => typeof ExcelJS !== 'undefined' ? resolve() : reject(new Error('ExcelJS no disponible'));
+        script.onerror = () => reject(new Error('Error de red'));
+        document.head.appendChild(script);
+      }).catch(error => { promesaExcelJS = null; throw error; });
+      return promesaExcelJS;
+    }
+
     async function exportarDescargasExcel() {
       const arr = obtenerDescargasFiltradas();
       if (!arr.length) return alert('No hay registros de descarga para exportar con los filtros actuales.');
-      if (typeof ExcelJS === 'undefined') return alert('No se pudo cargar ExcelJS.');
+      try { await cargarExcelJS(); } catch (_) { return alert('No se pudo cargar ExcelJS.'); }
 
       const wb = new ExcelJS.Workbook();
       wb.creator = 'Biblioteca Central UNIDA';
@@ -1523,11 +1548,11 @@
       ws.views = [{state:'frozen',ySplit:1}];
       ws.autoFilter = {from:'A1',to:'M1'};
       arr.forEach(d => ws.addRow({
-        fecha: fechaDescargaTexto(d.fecha), nombres:d.nombres||'', apellidos:d.apellidos||'', matricula:d.matricula||'', correo:d.correo||'', ocupacion:d.ocupacion||'', carrera:d.carrera||'', institucion:d.institucion||'', libro:textoPlano(d.tituloLibro||''), autor:d.autorLibro||'', carreraLibro:d.carreraLibro||'', libroId:d.libroId||'', origen:d.origen||''
+        fecha: fechaDescargaTexto(d.fecha), nombres:d.nombres||'', apellidos:d.apellidos||'', matricula:d.matricula||'', correo:d.correo||'', ocupacion:d.ocupacion||'', carrera:d.carrera||'', institucion:d.institucion||'', libro:tituloPlano(d.tituloLibro||''), autor:d.autorLibro||'', carreraLibro:d.carreraLibro||'', libroId:d.libroId||'', origen:d.origen||''
       }));
 
       const resumen = wb.addWorksheet('Resumen');
-      const porLibro = contarPor(arr, d => textoPlano(d.tituloLibro || 'Sin título'));
+      const porLibro = contarPor(arr, d => tituloPlano(d.tituloLibro || 'Sin título'));
       const porCarrera = contarPor(arr, d => d.carreraLibro || 'Sin especificar');
       const usuarios = new Set(arr.map(claveUsuarioDescarga).filter(Boolean));
       resumen.addRows([
@@ -1630,7 +1655,7 @@
           <td class="p-3 font-semibold">${escapeHtml(e.tipo || '-')}</td>
           <td class="p-3">${escapeHtml(`${u.nombres || ''} ${u.apellidos || ''}`.trim() || '-')}<div class="text-[10px] text-slate-400 mt-0.5">${escapeHtml(u.correo || '')}</div></td>
           <td class="p-3 font-mono text-cyan-400">${escapeHtml(u.matricula || '-')}</td>
-          <td class="p-3 max-w-[260px]">${escapeHtml(textoPlano(l.titulo || '-'))}<div class="text-[10px] text-slate-400 mt-0.5">${escapeHtml(l.autor || '')}</div></td>
+          <td class="p-3 max-w-[260px]">${escapeHtml(tituloPlano(l.titulo || '-'))}<div class="text-[10px] text-slate-400 mt-0.5">${escapeHtml(l.autor || '')}</div></td>
           <td class="p-3 max-w-[360px]">${escapeHtml(e.detalle || e.titulo || '-')}<div class="text-[10px] text-slate-400 mt-0.5">${e.conteo ? `${escapeHtml(e.conteo)} eventos / ${escapeHtml(e.ventanaMinutos || 2)} min` : ''}</div></td>
           <td class="p-3">${e.telegramEnviado === true ? '<span class="text-emerald-400 font-bold">Enviado</span>' : (e.telegramError ? '<span class="text-rose-400" title="'+escapeHtml(e.telegramError)+'">Error</span>' : '<span class="text-slate-400">Pendiente</span>')}</td>
         </tr>`;
@@ -1799,6 +1824,10 @@
       document.getElementById('prev-link').href = sanitizarHref(link);
     }
 
+    function tituloPlano(v = '') {
+      let s = String(v ?? '').replace(/&lt;(\/?span\b[^]*?)&gt;/gi, '<$1>');
+      return s.replace(/<\/?[a-z][^>]*>/gi, ' ').replace(/\s+/g, ' ').trim();
+    }
     function textoPlano(v='') { return String(v ?? '').trim(); }
     function sanitizarSrcImagen(v='') {
       const raw = textoPlano(v);
@@ -1849,15 +1878,15 @@
 
     function filtrarAuditoria(tipo){ filtroAuditoriaActivo=tipo; renderAuditoriaCalidad(); }
     
-    function renderAuditoriaCalidad(){
-      resultadosAuditoria=analizarCalidad(); const counts=t=>resultadosAuditoria.filter(x=>x.issues.includes(t)).length;
+    function renderAuditoriaCalidad(calidad = null){
+      resultadosAuditoria=calidad || analizarCalidad(); const counts=t=>resultadosAuditoria.filter(x=>x.issues.includes(t)).length;
       const ids={ 'audit-total':resultadosAuditoria.length,'audit-portada':counts('sin_portada'),'audit-generica':counts('portada_generica'),'audit-autor':counts('sin_autor'),'audit-link':counts('sin_link')+counts('link_invalido'),'audit-duplicados':counts('duplicado')}; Object.entries(ids).forEach(([id,v])=>{const e=document.getElementById(id);if(e)e.textContent=v;});
       const fac=document.getElementById('audit-facultad')?.value||''; const q=normalizarClave(document.getElementById('audit-buscar')?.value||'');
       let rows=resultadosAuditoria.filter(x=>x.issues.length); if(filtroAuditoriaActivo!=='todos') rows=rows.filter(x=>x.issues.includes(filtroAuditoriaActivo)); if(fac) rows=rows.filter(x=>MAPA_FACULTADES[x.libro.carrera]===fac); if(q) rows=rows.filter(x=>normalizarClave(x.libro.titulo+' '+x.libro.autor).includes(q));
       const labels={sin_portada:'Sin portada',portada_generica:'Portada genérica',sin_autor:'Sin autor',sin_link:'Sin enlace',link_invalido:'Enlace inválido',duplicado:'Posible duplicado',carrera_desconocida:'Carrera no reconocida'};
       const fa=document.getElementById('audit-filtro-activo'); if(fa) fa.textContent=filtroAuditoriaActivo==='todos'?'Todos los problemas':(labels[filtroAuditoriaActivo]||filtroAuditoriaActivo)+` · ${rows.length}`;
       const tb=document.getElementById('audit-cuerpo'); if(!tb)return; tb.innerHTML=rows.length?'':'<tr><td colspan="5" class="p-10 text-center text-emerald-400 font-bold">✓ No hay registros para este filtro</td></tr>';
-      rows.slice(0,1000).forEach(x=>{const l=x.libro; const idx=libros.indexOf(l); tb.innerHTML+=`<tr class="border-b dark:border-slate-800"><td class="p-3 font-semibold max-w-[300px]">${textoPlano(l.titulo)}</td><td class="p-3">${l.carrera||'-'}</td><td class="p-3">${l.autor||'<span class="text-rose-400">Sin autor</span>'}</td><td class="p-3">${x.issues.map(i=>`<span class="inline-block mr-1 mb-1 px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px]">${labels[i]||i}</span>`).join('')}</td><td class="p-3 text-right"><button onclick="editarDesdeAuditoria(${idx})" class="text-blue-400 font-bold"><i class="fas fa-pen mr-1"></i>Editar</button></td></tr>`;});
+      if (rows.length) tb.innerHTML=rows.slice(0,1000).map(x=>{const l=x.libro; const idx=libros.indexOf(l); return `<tr class="border-b dark:border-slate-800"><td class="p-3 font-semibold max-w-[300px]">${escapeHtml(tituloPlano(l.titulo))}</td><td class="p-3">${l.carrera||'-'}</td><td class="p-3">${l.autor||'<span class="text-rose-400">Sin autor</span>'}</td><td class="p-3">${x.issues.map(i=>`<span class="inline-block mr-1 mb-1 px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px]">${labels[i]||i}</span>`).join('')}</td><td class="p-3 text-right"><button onclick="editarDesdeAuditoria(${idx})" class="text-blue-400 font-bold"><i class="fas fa-pen mr-1"></i>Editar</button></td></tr>`;}).join('');
     }
 
     function editarDesdeAuditoria(i){ navegarPestana('tab-libros'); editarLibro(i); document.getElementById('form-libro')?.scrollIntoView({behavior:'smooth'}); }
@@ -2170,7 +2199,7 @@
 
     async function generarExcelInventario() {
       if (libros.length === 0) return alert("No hay libros disponibles.");
-      if (typeof ExcelJS === 'undefined') return alert("No se pudo cargar ExcelJS.");
+      try { await cargarExcelJS(); } catch (_) { return alert('No se pudo cargar ExcelJS.'); }
 
       const btn = document.querySelector('button[onclick="generarExcelInventario()"]');
       const textoOriginal = btn ? btn.innerHTML : '';
@@ -2359,6 +2388,8 @@
       }
     }
 
+    function pestanaVisible(id) { return !document.getElementById(id)?.classList.contains('hidden'); }
+
     function actualizarTodoUI() {
       document.getElementById('kpi-total').textContent = libros.filter(l => l.carrera !== 'PPT').length;
       document.getElementById('kpi-simuladores').textContent = simuladores.length;
@@ -2370,11 +2401,11 @@
       const comp=document.getElementById('kpi-completitud'); if(comp) comp.textContent=`${Math.round((1-conProblemas/totalCal)*100)}%`;
       const sp=document.getElementById('kpi-sin-portada'); if(sp) sp.textContent=calidad.filter(x=>x.issues.includes('sin_portada')).length;
       const du=document.getElementById('kpi-duplicados'); if(du) du.textContent=calidad.filter(x=>x.issues.includes('duplicado')).length;
-      filtrarTabla();
-      renderAuditoriaCalidad();
-      renderGraficos();
-      renderSimuladores();
-      renderClub();
+      if (pestanaVisible('tab-libros')) filtrarTabla();
+      if (pestanaVisible('tab-auditoria')) renderAuditoriaCalidad(calidad);
+      if (pestanaVisible('tab-metricas')) renderGraficos();
+      if (pestanaVisible('tab-simuladores')) renderSimuladores();
+      if (pestanaVisible('tab-club')) renderClub();
     }
 
     function reiniciarPaginacion(){ paginaTabla=1; }
@@ -2388,10 +2419,10 @@
     function filtrarTabla(reset=false) {
       if(reset) paginaTabla=1; const q=normalizarClave(document.getElementById('buscador-tabla')?.value||''); const c=document.getElementById('filtro-carrera')?.value||''; const fac=document.getElementById('filtro-facultad')?.value||''; const orden=document.getElementById('orden-tabla')?.value||'titulo-asc';
       let arr=libros.filter(l=>l.carrera!=='PPT').filter(l=>(!c||l.carrera===c)&&(!fac||MAPA_FACULTADES[l.carrera]===fac)&&(!q||normalizarClave(`${l.titulo} ${l.autor}`).includes(q)));
-      const val=l=>orden.startsWith('autor')?(l.autor||''):orden.startsWith('carrera')?(l.carrera||''):textoPlano(l.titulo); arr.sort((a,b)=>val(a).localeCompare(val(b),'es',{sensitivity:'base'})*(orden.endsWith('desc')?-1:1));
+      const val=l=>orden.startsWith('autor')?(l.autor||''):orden.startsWith('carrera')?(l.carrera||''):tituloPlano(l.titulo); arr.sort((a,b)=>val(a).localeCompare(val(b),'es',{sensitivity:'base'})*(orden.endsWith('desc')?-1:1));
       const totalPag=Math.max(1,Math.ceil(arr.length/FILAS_POR_PAGINA)); paginaTabla=Math.min(paginaTabla,totalPag); const ini=(paginaTabla-1)*FILAS_POR_PAGINA; const page=arr.slice(ini,ini+FILAS_POR_PAGINA); const tbody=document.getElementById('tabla-cuerpo'); tbody.innerHTML='';
       page.forEach(l=>{const i=libros.indexOf(l);const tr=document.createElement('tr');tr.className='hover:bg-blue-500/10 transition border-b border-slate-100 dark:border-slate-800';
-        const tdTitulo=document.createElement('td');tdTitulo.className='p-3 truncate max-w-[260px] font-semibold text-slate-800 dark:text-slate-200';tdTitulo.textContent=textoPlano(l.titulo);tr.appendChild(tdTitulo);
+        const tdTitulo=document.createElement('td');tdTitulo.className='p-3 truncate max-w-[260px] font-semibold text-slate-800 dark:text-slate-200';tdTitulo.textContent=tituloPlano(l.titulo);tr.appendChild(tdTitulo);
         const tdCarrera=document.createElement('td');tdCarrera.className='p-3';const spanCarrera=document.createElement('span');spanCarrera.className='px-2 py-0.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded text-[10px] font-bold';spanCarrera.textContent=l.carrera||'-';tdCarrera.appendChild(spanCarrera);tr.appendChild(tdCarrera);
         const tdAutor=document.createElement('td');tdAutor.className='p-3 truncate max-w-[180px]';tdAutor.textContent=l.autor||'-';tr.appendChild(tdAutor);
         const tdLink=document.createElement('td');tdLink.className='p-3';let safeHref='';try{if(l.link){const u=new URL(l.link,window.location.origin);if(u.protocol==='http:'||u.protocol==='https:')safeHref=u.href;}}catch(e){}if(safeHref){const a=document.createElement('a');a.href=safeHref;a.target='_blank';a.rel='noopener noreferrer';a.className='text-blue-400 hover:underline font-semibold';const icon=document.createElement('i');icon.className='fab fa-google-drive';a.appendChild(icon);a.appendChild(document.createTextNode(' Link'));tdLink.appendChild(a);}else{const spanSin=document.createElement('span');spanSin.className='text-rose-500';spanSin.textContent='Sin enlace';tdLink.appendChild(spanSin);}tr.appendChild(tdLink);
