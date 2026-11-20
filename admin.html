@@ -1772,7 +1772,7 @@
           const tituloLimpio = item.titulo.toLowerCase().trim();
           if (!existentesTitulos.has(tituloLimpio)) {
             const docRef = db.collection("libros").doc();
-            batch.set(docRef, item);
+            batch.set(docRef, { ...item, catalogoActualizadoEn: firebase.firestore.FieldValue.serverTimestamp() });
             existentesTitulos.add(tituloLimpio);
             agregados++;
           }
@@ -2026,7 +2026,8 @@
         titulo: titulo,
         autor: document.getElementById('inp-autor').value.trim(),
         imagen: document.getElementById('inp-imagen').value.trim() || PORTADAS_PRESET[document.getElementById('inp-carrera').value],
-        link: document.getElementById('inp-link').value.trim()
+        link: document.getElementById('inp-link').value.trim(),
+        catalogoActualizadoEn: firebase.firestore.FieldValue.serverTimestamp()
       };
 
       if (db) {
@@ -2096,7 +2097,8 @@
         titulo: document.getElementById('club-titulo').value.trim(),
         autor: document.getElementById('club-autor').value.trim(),
         link: document.getElementById('club-link').value.trim(),
-        imagen: document.getElementById('club-imagen').value.trim() || CLUB_PORTADA_DEFAULT
+        imagen: document.getElementById('club-imagen').value.trim() || CLUB_PORTADA_DEFAULT,
+        catalogoActualizadoEn: firebase.firestore.FieldValue.serverTimestamp()
       };
       if (db) {
         if (docId) { await db.collection('libros').doc(docId).update(material); await registrarAuditoria('editar','club',docId,material.titulo); }
@@ -2752,7 +2754,8 @@ let carreraSeleccionadaGrafico = null;
               carrera:'Bioquímica',titulo:r.titulo,autor:'S/A',imagen:portada,
               link:r.url_publica,materia:r.materia,origenId:r.origen_id,
               nombreArchivo:r.nombre_archivo,estadoPortada:'pendiente',
-              origenImportacion:'Bioquimica OneDrive',fechaImportacion:firebase.firestore.FieldValue.serverTimestamp()
+              origenImportacion:'Bioquimica OneDrive',fechaImportacion:firebase.firestore.FieldValue.serverTimestamp(),
+              catalogoActualizadoEn:firebase.firestore.FieldValue.serverTimestamp()
             });
           });
           await batch.commit();escritos+=grupo.length;bioEstado('Guardados '+escritos+' de '+actual.nuevos.length+'...');
