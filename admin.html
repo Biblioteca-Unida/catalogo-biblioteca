@@ -1063,6 +1063,11 @@
       }
       if (!db) {
         db = firebase.firestore();
+        db.settings({
+          experimentalForceLongPolling: true,
+          experimentalAutoDetectLongPolling: false,
+          merge: true
+        });
       }
       return firebase.auth();
     }
